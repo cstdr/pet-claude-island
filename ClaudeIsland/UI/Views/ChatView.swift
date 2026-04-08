@@ -353,14 +353,22 @@ struct ChatView: View {
 
     // MARK: - Input Bar
 
-    /// Can send messages only if session is in tmux
+    /// Can send messages if session is in tmux or Ghostty (native terminal control)
     private var canSendMessages: Bool {
-        session.isInTmux && session.tty != nil
+        // In tmux - use tmux send-keys
+        if session.isInTmux && session.tty != nil {
+            return true
+        }
+        // In Ghostty (not tmux) - use Ghostty AppleScript
+        if session.isInGhostty && !session.isInTmux && session.pid != nil {
+            return true
+        }
+        return false
     }
 
     private var inputBar: some View {
         HStack(spacing: 10) {
-            TextField(canSendMessages ? "Message Claude..." : "Open Claude Code in tmux to enable messaging", text: $inputText)
+            TextField(canSendMessages ? "Message Claude..." : "Open Claude Code in terminal to enable messaging", text: $inputText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
                 .foregroundColor(canSendMessages ? .white : .white.opacity(0.4))
