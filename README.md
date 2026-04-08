@@ -6,6 +6,8 @@
     <br />
     Track Claude Code sessions with pixel-art cat companions 🐱
     <br />
+    <a href="README_zh.md">中文版</a>
+    <br />
     <br />
     <a href="https://github.com/cstdr/cat-claude-island/releases/latest" target="_blank" rel="noopener noreferrer">
       <img src="https://img.shields.io/github/v/release/cstdr/cat-claude-island?style=rounded&color=white&labelColor=000000&label=release" alt="Release Version" />
