@@ -2,20 +2,27 @@
   <img src="ClaudeIsland/Assets.xcassets/AppIcon.appiconset/icon_128x128.png" alt="Logo" width="100" height="100">
   <h3 align="center">Claude Island</h3>
   <p align="center">
-    A macOS menu bar app that brings Dynamic Island-style notifications to Claude Code CLI sessions.
+    A macOS menu bar app featuring adorable animated cats in the Dynamic Island.
+    <br />
+    Track Claude Code sessions with pixel-art cat companions 🐱
     <br />
     <br />
-    <a href="https://github.com/farouqaldori/claude-island/releases/latest" target="_blank" rel="noopener noreferrer">
-      <img src="https://img.shields.io/github/v/release/farouqaldori/claude-island?style=rounded&color=white&labelColor=000000&label=release" alt="Release Version" />
+    <a href="https://github.com/cstdr/cat-claude-island/releases/latest" target="_blank" rel="noopener noreferrer">
+      <img src="https://img.shields.io/github/v/release/cstdr/cat-claude-island?style=rounded&color=white&labelColor=000000&label=release" alt="Release Version" />
     </a>
     <a href="#" target="_blank" rel="noopener noreferrer">
-      <img alt="GitHub Downloads" src="https://img.shields.io/github/downloads/farouqaldori/claude-island/total?style=rounded&color=white&labelColor=000000">
+      <img alt="GitHub Downloads" src="https://img.shields.io/github/downloads/cstdr/cat-claude-island/total?style=rounded&color=white&labelColor=000000">
     </a>
   </p>
 </div>
 
 ## Features
 
+- **Animated Cat Icons** — Pixel-art cats (Gulu & Yiyi) animate in the menu bar notch
+  - Idle: sleeping cat
+  - Waiting: sitting cat with wagging tail
+  - Processing: running cat animation
+  - Approval: cat with raised paw
 - **Notch UI** — Animated overlay that expands from the MacBook notch
 - **Live Session Monitoring** — Track multiple Claude Code sessions in real-time
 - **Permission Approvals** — Approve or deny tool executions directly from the notch
