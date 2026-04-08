@@ -289,7 +289,12 @@ struct InstanceRow: View {
 
     @ViewBuilder
     private var stateIndicator: some View {
-        StatusIcon(phase: session.phase, size: 14)
+        switch session.phase {
+        case .processing, .compacting:
+            LargeRunningCatIcon(size: 20)
+        default:
+            StatusIcon(phase: session.phase, size: 14)
+        }
     }
 
 }

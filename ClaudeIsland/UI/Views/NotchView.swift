@@ -8,6 +8,7 @@
 import AppKit
 import CoreGraphics
 import SwiftUI
+import Combine
 
 // Corner radius constants
 private let cornerRadiusInsets = (
@@ -26,6 +27,20 @@ struct NotchView: View {
     @State private var isVisible: Bool = false
     @State private var isHovering: Bool = false
     @State private var isBouncing: Bool = false
+
+    /// The primary phase for displaying cat icon animation
+    private var primaryPhase: SessionPhase {
+        if hasPendingPermission {
+            return .waitingForApproval(PermissionContext(toolUseId: "", toolName: "pending", toolInput: nil, receivedAt: Date()))
+        }
+        if isProcessing {
+            return .processing
+        }
+        if hasWaitingForInput {
+            return .waitingForInput
+        }
+        return .idle
+    }
 
     @Namespace private var activityNamespace
 
@@ -249,7 +264,7 @@ struct NotchView: View {
             // Left side - crab + optional permission indicator (visible when processing, pending, or waiting for input)
             if showClosedActivity {
                 HStack(spacing: 4) {
-                    ClaudeCrabIcon(size: 14, animateLegs: isProcessing)
+                    MenuBarCatIcon(phase: primaryPhase, size: 40)
                         .matchedGeometryEffect(id: "crab", in: activityNamespace, isSource: showClosedActivity)
 
                     // Permission indicator only (amber) - waiting for input shows checkmark on right
@@ -304,10 +319,10 @@ struct NotchView: View {
     @ViewBuilder
     private var openedHeaderContent: some View {
         HStack(spacing: 12) {
-            // Show static crab only if not showing activity in headerRow
-            // (headerRow handles crab + indicator when showClosedActivity is true)
+            // Show static cat only if not showing activity in headerRow
+            // (headerRow handles cat + indicator when showClosedActivity is true)
             if !showClosedActivity {
-                ClaudeCrabIcon(size: 14)
+                MenuBarCatIcon(phase: primaryPhase, size: 40)
                     .matchedGeometryEffect(id: "crab", in: activityNamespace, isSource: !showClosedActivity)
                     .padding(.leading, 8)
             }

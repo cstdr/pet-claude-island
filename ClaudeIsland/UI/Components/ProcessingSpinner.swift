@@ -15,7 +15,7 @@ struct ProcessingSpinner: View {
 
     var body: some View {
         YarnBallShape(phase: phase)
-            .frame(width: 20, height: 24)
+            .frame(width: 14, height: 16)
             .onAppear {
                 timerCancellable = Timer.publish(every: 1.0 / 30.0, on: .main, in: .common)
                     .autoconnect()
