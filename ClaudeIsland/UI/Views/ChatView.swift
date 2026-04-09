@@ -87,6 +87,9 @@ struct ChatView: View {
                     inputBar
                         .transition(.opacity)
                 }
+
+                // Debug: show session state
+                debugInfo
             }
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isWaitingForApproval)
@@ -414,8 +417,22 @@ struct ChatView: View {
         .zIndex(1) // Render above message list
     }
 
-    // MARK: - Approval Bar
+    // MARK: - Debug Info
 
+    private var debugInfo: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("DEBUG: isInTmux=\(session.isInTmux), isInGhostty=\(session.isInGhostty), pid=\(session.pid ?? -1)")
+                .font(.system(size: 9))
+                .foregroundColor(.orange)
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 4)
+    }
+}
+
+// MARK: - Approval Bar
+
+extension ChatView {
     private func approvalBar(tool: String) -> some View {
         ChatApprovalBar(
             tool: tool,
@@ -487,13 +504,19 @@ struct ChatView: View {
     }
 
     private func sendToSession(_ text: String) async {
+        print("DEBUG ChatView: sendToSession called, text=\(text)")
+        print("DEBUG ChatView: isInGhostty=\(session.isInGhostty), isInTmux=\(session.isInTmux), pid=\(session.pid ?? -1)")
         guard let pid = session.pid else { return }
 
         // Try Ghostty first (native AppleScript control)
         if session.isInGhostty && !session.isInTmux {
-            _ = await GhosttyController.shared.sendText(text, to: pid)
+            print("DEBUG: Taking Ghostty branch, pid=\(pid)")
+            let success = await GhosttyController.shared.sendText(text, to: pid)
+            print("DEBUG: Ghostty send result: \(success)")
             return
         }
+
+        print("DEBUG: Taking tmux branch")
 
         // Fall back to tmux
         guard session.isInTmux else { return }

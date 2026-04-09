@@ -85,6 +85,7 @@ struct NotchMenuView: View {
             ) {
                 keepNotchVisible.toggle()
                 UserDefaults.standard.set(keepNotchVisible, forKey: "keepNotchVisible")
+                NotificationCenter.default.post(name: .keepNotchVisibleDidChange, object: nil)
             }
 
             // Language selector

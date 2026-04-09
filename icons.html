@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body { background: #111; color: #fff; font-family: monospace; padding: 20px; }
+.icon-container { display: inline-block; margin: 20px; text-align: center; }
+.icon-box { background: #000; border: 1px solid #333; display: inline-block; }
+canvas { display: block; }
+.label { margin-top: 8px; font-size: 14px; color: #888; }
+</style>
+</head>
+<body>
+<h2>Cat Icons - Original Swift Pixel Definitions</h2>
+
+<div id="icons"></div>
+
+<script>
+const BLACK = '#2a2a2a';
+const GRAY = '#5a5a5a';
+const WHITE = '#f5f5f5';
+const PINK = '#ffb6c1';
+const LIGHTGRAY = '#8a8a8a';
+
+function drawIcon(canvasId, pixels, offsetX, offsetY, canvasW, canvasH) {
+    const canvas = document.getElementById(canvasId);
+    canvas.width = canvasW || 32;
+    canvas.height = canvasH || 32;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    pixels.forEach(([x, y, color]) => {
+        ctx.fillStyle = color;
+        ctx.fillRect(x + (offsetX || 0), y + (offsetY || 0), 1, 1);
+    });
+}
+
+// ============ WaitingCatIcon (now Idle) ============
+// Original Swift: 32x32 grid, pixels at x=1-7, y=1-9
+// Breathing animation: offset b = 0 or 1
+const waitingPixels_0 = [
+    [1,7,BLACK],[1,8,BLACK],[2,8,BLACK],[1,9,BLACK],
+    [2,4,GRAY],[3,4,GRAY],[4,4,GRAY],[5,4,GRAY],[6,4,GRAY],
+    [1,5,GRAY],[2,5,GRAY],[3,5,GRAY],[4,5,GRAY],[5,5,GRAY],[6,5,GRAY],[7,5,GRAY],
+    [1,6,GRAY],[2,6,GRAY],[3,6,GRAY],[4,6,GRAY],[5,6,GRAY],[6,6,GRAY],[7,6,GRAY],
+    [3,6,WHITE],[4,6,WHITE],[5,6,WHITE],
+    [2,2,GRAY],[3,2,GRAY],[4,2,GRAY],[5,2,GRAY],[6,2,GRAY],
+    [1,3,BLACK],[2,3,BLACK],[3,3,BLACK],[4,3,BLACK],[5,3,BLACK],[6,3,BLACK],[7,3,BLACK],
+    [2,1,BLACK],[6,1,BLACK],
+    [3,3,BLACK],[4,3,WHITE],[5,3,BLACK],[6,3,WHITE],[7,3,BLACK],
+    [4,4,PINK],[5,4,PINK],
+    [2,7,WHITE],[3,7,WHITE],[5,7,WHITE],[6,7,WHITE],
+];
+const waitingPixels_1 = [
+    [1,8,BLACK],[1,9,BLACK],[2,9,BLACK],[1,10,BLACK],
+    [2,5,GRAY],[3,5,GRAY],[4,5,GRAY],[5,5,GRAY],[6,5,GRAY],
+    [1,6,GRAY],[2,6,GRAY],[3,6,GRAY],[4,6,GRAY],[5,6,GRAY],[6,6,GRAY],[7,6,GRAY],
+    [1,7,GRAY],[2,7,GRAY],[3,7,GRAY],[4,7,GRAY],[5,7,GRAY],[6,7,GRAY],[7,7,GRAY],
+    [3,7,WHITE],[4,7,WHITE],[5,7,WHITE],
+    [2,3,GRAY],[3,3,GRAY],[4,3,GRAY],[5,3,GRAY],[6,3,GRAY],
+    [1,4,BLACK],[2,4,BLACK],[3,4,BLACK],[4,4,BLACK],[5,4,BLACK],[6,4,BLACK],[7,4,BLACK],
+    [2,2,BLACK],[6,2,BLACK],
+    [3,4,BLACK],[4,4,WHITE],[5,4,BLACK],[6,4,WHITE],[7,4,BLACK],
+    [4,5,PINK],[5,5,PINK],
+    [2,8,WHITE],[3,8,WHITE],[5,8,WHITE],[6,8,WHITE],
+];
+
+// ============ IdleCatIcon (now Waiting) ============
+// Original Swift: 32x32 grid, pixels at x=2-9, y=3-8
+// Breathing animation
+const idlePixels_0 = [
+    [3,5,GRAY],[4,5,GRAY],[5,5,GRAY],[6,5,GRAY],[7,5,GRAY],[8,5,GRAY],
+    [2,6,GRAY],[3,6,GRAY],[4,6,GRAY],[5,6,GRAY],[6,6,GRAY],[7,6,GRAY],[8,6,GRAY],[9,6,GRAY],
+    [2,7,GRAY],[3,7,GRAY],[4,7,GRAY],[5,7,GRAY],[6,7,GRAY],[7,7,GRAY],[8,7,GRAY],[9,7,GRAY],
+    [3,8,WHITE],[4,8,WHITE],[5,8,WHITE],[6,8,WHITE],[7,8,WHITE],[8,8,WHITE],
+    [4,3,GRAY],[5,3,GRAY],[6,3,GRAY],[7,3,GRAY],
+    [3,4,BLACK],[4,4,BLACK],[7,4,BLACK],[8,4,BLACK],
+    [4,4,BLACK],[5,4,BLACK],[6,4,BLACK],[7,4,BLACK],
+    [5,5,PINK],[6,5,PINK],
+];
+const idlePixels_1 = [
+    [3,6,GRAY],[4,6,GRAY],[5,6,GRAY],[6,6,GRAY],[7,6,GRAY],[8,6,GRAY],
+    [2,7,GRAY],[3,7,GRAY],[4,7,GRAY],[5,7,GRAY],[6,7,GRAY],[7,7,GRAY],[8,7,GRAY],[9,7,GRAY],
+    [2,8,GRAY],[3,8,GRAY],[4,8,GRAY],[5,8,GRAY],[6,8,GRAY],[7,8,GRAY],[8,8,GRAY],[9,8,GRAY],
+    [3,9,WHITE],[4,9,WHITE],[5,9,WHITE],[6,9,WHITE],[7,9,WHITE],[8,9,WHITE],
+    [4,4,GRAY],[5,4,GRAY],[6,4,GRAY],[7,4,GRAY],
+    [3,5,BLACK],[4,5,BLACK],[7,5,BLACK],[8,5,BLACK],
+    [4,5,BLACK],[5,5,BLACK],[6,5,BLACK],[7,5,BLACK],
+    [5,6,PINK],[6,6,PINK],
+];
+
+// ============ RunningCatIcon (original Swift version) ============
+// Original Swift: 32x32 canvas, pixels at x=4-26, y=4-18
+// 4 animation frames
+const runningFrames = [
+// Frame 0
+[
+    [18,6,GRAY],[19,6,GRAY],[20,6,GRAY],[21,6,GRAY],[22,6,GRAY],[23,6,GRAY],
+    [18,11,GRAY],[19,11,GRAY],[20,11,GRAY],[21,11,GRAY],[22,11,GRAY],[23,11,GRAY],
+    [17,7,GRAY],[18,7,GRAY],[19,7,GRAY],[20,7,GRAY],[21,7,GRAY],[22,7,GRAY],[23,7,GRAY],[24,7,GRAY],
+    [17,8,GRAY],[18,8,GRAY],[19,8,GRAY],[20,8,GRAY],[21,8,GRAY],[22,8,GRAY],[23,8,GRAY],[24,8,GRAY],
+    [17,9,GRAY],[18,9,GRAY],[19,9,GRAY],[20,9,GRAY],[21,9,GRAY],[22,9,GRAY],[23,9,GRAY],[24,9,GRAY],
+    [17,10,GRAY],[18,10,GRAY],[19,10,GRAY],[20,10,GRAY],[21,10,GRAY],[22,10,GRAY],[23,10,GRAY],[24,10,GRAY],
+    [20,8,WHITE],[21,8,WHITE],
+    [19,9,WHITE],[20,9,WHITE],[21,9,WHITE],[22,9,WHITE],
+    [18,10,WHITE],[19,10,WHITE],[20,10,WHITE],[21,10,WHITE],[22,10,WHITE],[23,10,WHITE],
+    [18,11,WHITE],[19,11,WHITE],[20,11,WHITE],[21,11,WHITE],[22,11,WHITE],[23,11,WHITE],
+    [20,9,PINK],[21,9,PINK],
+    [20,10,PINK],[21,10,PINK],
+    [18,7,BLACK],[23,7,BLACK],
+    [17,5,BLACK],[18,5,BLACK],[16,4,BLACK],[17,4,BLACK],[18,4,BLACK],
+    [24,5,BLACK],[25,5,BLACK],[24,4,BLACK],[25,4,BLACK],[26,4,BLACK],
+    [10,11,GRAY],[11,11,GRAY],[12,11,GRAY],[13,11,GRAY],[14,11,GRAY],[15,11,GRAY],[16,11,GRAY],[17,11,GRAY],
+    [10,12,GRAY],[11,12,GRAY],[12,12,GRAY],[13,12,GRAY],[14,12,GRAY],[15,12,GRAY],[16,12,GRAY],[17,12,GRAY],
+    [10,13,GRAY],[11,13,GRAY],[12,13,GRAY],[13,13,GRAY],[14,13,GRAY],[15,13,GRAY],[16,13,GRAY],[17,13,GRAY],
+    [14,12,WHITE],[15,12,WHITE],[16,12,WHITE],
+    [14,13,WHITE],[15,13,WHITE],[16,13,WHITE],
+    [11,11,LIGHTGRAY],[15,11,LIGHTGRAY],
+    [8,10,BLACK],[7,9,BLACK],[6,8,BLACK],[5,7,BLACK],[4,6,BLACK],
+    [18,14,WHITE],[19,14,WHITE],[19,15,WHITE],[20,15,WHITE],[18,16,WHITE],[19,16,WHITE],
+    [10,16,WHITE],[11,16,WHITE],[9,17,WHITE],[10,17,WHITE],[8,18,WHITE],[9,18,WHITE],
+],
+// Frame 1
+[
+    [18,6,GRAY],[19,6,GRAY],[20,6,GRAY],[21,6,GRAY],[22,6,GRAY],[23,6,GRAY],
+    [18,11,GRAY],[19,11,GRAY],[20,11,GRAY],[21,11,GRAY],[22,11,GRAY],[23,11,GRAY],
+    [17,7,GRAY],[18,7,GRAY],[19,7,GRAY],[20,7,GRAY],[21,7,GRAY],[22,7,GRAY],[23,7,GRAY],[24,7,GRAY],
+    [17,8,GRAY],[18,8,GRAY],[19,8,GRAY],[20,8,GRAY],[21,8,GRAY],[22,8,GRAY],[23,8,GRAY],[24,8,GRAY],
+    [17,9,GRAY],[18,9,GRAY],[19,9,GRAY],[20,9,GRAY],[21,9,GRAY],[22,9,GRAY],[23,9,GRAY],[24,9,GRAY],
+    [17,10,GRAY],[18,10,GRAY],[19,10,GRAY],[20,10,GRAY],[21,10,GRAY],[22,10,GRAY],[23,10,GRAY],[24,10,GRAY],
+    [20,8,WHITE],[21,8,WHITE],
+    [19,9,WHITE],[20,9,WHITE],[21,9,WHITE],[22,9,WHITE],
+    [18,10,WHITE],[19,10,WHITE],[20,10,WHITE],[21,10,WHITE],[22,10,WHITE],[23,10,WHITE],
+    [18,11,WHITE],[19,11,WHITE],[20,11,WHITE],[21,11,WHITE],[22,11,WHITE],[23,11,WHITE],
+    [20,9,PINK],[21,9,PINK],
+    [20,10,PINK],[21,10,PINK],
+    [18,7,BLACK],[23,7,BLACK],
+    [17,5,BLACK],[18,5,BLACK],[16,4,BLACK],[17,4,BLACK],[18,4,BLACK],
+    [24,5,BLACK],[25,5,BLACK],[24,4,BLACK],[25,4,BLACK],[26,4,BLACK],
+    [10,11,GRAY],[11,11,GRAY],[12,11,GRAY],[13,11,GRAY],[14,11,GRAY],[15,11,GRAY],[16,11,GRAY],[17,11,GRAY],
+    [10,12,GRAY],[11,12,GRAY],[12,12,GRAY],[13,12,GRAY],[14,12,GRAY],[15,12,GRAY],[16,12,GRAY],[17,12,GRAY],
+    [10,13,GRAY],[11,13,GRAY],[12,13,GRAY],[13,13,GRAY],[14,13,GRAY],[15,13,GRAY],[16,13,GRAY],[17,13,GRAY],
+    [14,12,WHITE],[15,12,WHITE],[16,12,WHITE],
+    [14,13,WHITE],[15,13,WHITE],[16,13,WHITE],
+    [11,11,LIGHTGRAY],[15,11,LIGHTGRAY],
+    [8,10,BLACK],[7,9,BLACK],[6,8,BLACK],[5,7,BLACK],[4,6,BLACK],
+    [18,15,WHITE],[19,15,WHITE],[19,16,WHITE],[20,16,WHITE],[18,17,WHITE],[19,17,WHITE],
+    [10,15,WHITE],[11,15,WHITE],[9,16,WHITE],[10,16,WHITE],[8,17,WHITE],[9,17,WHITE],
+],
+// Frame 2
+[
+    [18,6,GRAY],[19,6,GRAY],[20,6,GRAY],[21,6,GRAY],[22,6,GRAY],[23,6,GRAY],
+    [18,11,GRAY],[19,11,GRAY],[20,11,GRAY],[21,11,GRAY],[22,11,GRAY],[23,11,GRAY],
+    [17,7,GRAY],[18,7,GRAY],[19,7,GRAY],[20,7,GRAY],[21,7,GRAY],[22,7,GRAY],[23,7,GRAY],[24,7,GRAY],
+    [17,8,GRAY],[18,8,GRAY],[19,8,GRAY],[20,8,GRAY],[21,8,GRAY],[22,8,GRAY],[23,8,GRAY],[24,8,GRAY],
+    [17,9,GRAY],[18,9,GRAY],[19,9,GRAY],[20,9,GRAY],[21,9,GRAY],[22,9,GRAY],[23,9,GRAY],[24,9,GRAY],
+    [17,10,GRAY],[18,10,GRAY],[19,10,GRAY],[20,10,GRAY],[21,10,GRAY],[22,10,GRAY],[23,10,GRAY],[24,10,GRAY],
+    [20,8,WHITE],[21,8,WHITE],
+    [19,9,WHITE],[20,9,WHITE],[21,9,WHITE],[22,9,WHITE],
+    [18,10,WHITE],[19,10,WHITE],[20,10,WHITE],[21,10,WHITE],[22,10,WHITE],[23,10,WHITE],
+    [18,11,WHITE],[19,11,WHITE],[20,11,WHITE],[21,11,WHITE],[22,11,WHITE],[23,11,WHITE],
+    [20,9,PINK],[21,9,PINK],
+    [20,10,PINK],[21,10,PINK],
+    [18,7,BLACK],[23,7,BLACK],
+    [17,5,BLACK],[18,5,BLACK],[16,4,BLACK],[17,4,BLACK],[18,4,BLACK],
+    [24,5,BLACK],[25,5,BLACK],[24,4,BLACK],[25,4,BLACK],[26,4,BLACK],
+    [10,11,GRAY],[11,11,GRAY],[12,11,GRAY],[13,11,GRAY],[14,11,GRAY],[15,11,GRAY],[16,11,GRAY],[17,11,GRAY],
+    [10,12,GRAY],[11,12,GRAY],[12,12,GRAY],[13,12,GRAY],[14,12,GRAY],[15,12,GRAY],[16,12,GRAY],[17,12,GRAY],
+    [10,13,GRAY],[11,13,GRAY],[12,13,GRAY],[13,13,GRAY],[14,13,GRAY],[15,13,GRAY],[16,13,GRAY],[17,13,GRAY],
+    [14,12,WHITE],[15,12,WHITE],[16,12,WHITE],
+    [14,13,WHITE],[15,13,WHITE],[16,13,WHITE],
+    [11,11,LIGHTGRAY],[15,11,LIGHTGRAY],
+    [8,10,BLACK],[7,9,BLACK],[6,8,BLACK],[5,7,BLACK],[4,6,BLACK],
+    [16,16,WHITE],[17,16,WHITE],[15,17,WHITE],[16,17,WHITE],[14,18,WHITE],[15,18,WHITE],
+    [12,14,WHITE],[13,14,WHITE],[13,15,WHITE],[14,15,WHITE],[12,16,WHITE],[13,16,WHITE],
+],
+// Frame 3
+[
+    [18,6,GRAY],[19,6,GRAY],[20,6,GRAY],[21,6,GRAY],[22,6,GRAY],[23,6,GRAY],
+    [18,11,GRAY],[19,11,GRAY],[20,11,GRAY],[21,11,GRAY],[22,11,GRAY],[23,11,GRAY],
+    [17,7,GRAY],[18,7,GRAY],[19,7,GRAY],[20,7,GRAY],[21,7,GRAY],[22,7,GRAY],[23,7,GRAY],[24,7,GRAY],
+    [17,8,GRAY],[18,8,GRAY],[19,8,GRAY],[20,8,GRAY],[21,8,GRAY],[22,8,GRAY],[23,8,GRAY],[24,8,GRAY],
+    [17,9,GRAY],[18,9,GRAY],[19,9,GRAY],[20,9,GRAY],[21,9,GRAY],[22,9,GRAY],[23,9,GRAY],[24,9,GRAY],
+    [17,10,GRAY],[18,10,GRAY],[19,10,GRAY],[20,10,GRAY],[21,10,GRAY],[22,10,GRAY],[23,10,GRAY],[24,10,GRAY],
+    [20,8,WHITE],[21,8,WHITE],
+    [19,9,WHITE],[20,9,WHITE],[21,9,WHITE],[22,9,WHITE],
+    [18,10,WHITE],[19,10,WHITE],[20,10,WHITE],[21,10,WHITE],[22,10,WHITE],[23,10,WHITE],
+    [18,11,WHITE],[19,11,WHITE],[20,11,WHITE],[21,11,WHITE],[22,11,WHITE],[23,11,WHITE],
+    [20,9,PINK],[21,9,PINK],
+    [20,10,PINK],[21,10,PINK],
+    [18,7,BLACK],[23,7,BLACK],
+    [17,5,BLACK],[18,5,BLACK],[16,4,BLACK],[17,4,BLACK],[18,4,BLACK],
+    [24,5,BLACK],[25,5,BLACK],[24,4,BLACK],[25,4,BLACK],[26,4,BLACK],
+    [10,11,GRAY],[11,11,GRAY],[12,11,GRAY],[13,11,GRAY],[14,11,GRAY],[15,11,GRAY],[16,11,GRAY],[17,11,GRAY],
+    [10,12,GRAY],[11,12,GRAY],[12,12,GRAY],[13,12,GRAY],[14,12,GRAY],[15,12,GRAY],[16,12,GRAY],[17,12,GRAY],
+    [10,13,GRAY],[11,13,GRAY],[12,13,GRAY],[13,13,GRAY],[14,13,GRAY],[15,13,GRAY],[16,13,GRAY],[17,13,GRAY],
+    [14,12,WHITE],[15,12,WHITE],[16,12,WHITE],
+    [14,13,WHITE],[15,13,WHITE],[16,13,WHITE],
+    [11,11,LIGHTGRAY],[15,11,LIGHTGRAY],
+    [8,10,BLACK],[7,9,BLACK],[6,8,BLACK],[5,7,BLACK],[4,6,BLACK],
+    [17,15,WHITE],[18,15,WHITE],[18,16,WHITE],[19,16,WHITE],[17,17,WHITE],[18,17,WHITE],
+    [11,15,WHITE],[12,15,WHITE],[10,16,WHITE],[11,16,WHITE],[9,17,WHITE],[10,17,WHITE],
+],
+];
+
+// ============ ApprovalCatIcon ============
+// Original Swift: 32x32 grid, pixels at x=1-8, y=1-8
+const approvalPixels = [
+    [2,5,GRAY],[3,5,GRAY],[4,5,GRAY],[5,5,GRAY],[6,5,GRAY],
+    [1,6,GRAY],[2,6,GRAY],[3,6,GRAY],[4,6,GRAY],[5,6,GRAY],[6,6,GRAY],[7,6,GRAY],
+    [1,7,GRAY],[2,7,GRAY],[3,7,GRAY],[4,7,GRAY],[5,7,GRAY],[6,7,GRAY],[7,7,GRAY],
+    [3,7,WHITE],[4,7,WHITE],[5,7,WHITE],
+    [2,2,GRAY],[3,2,GRAY],[4,2,GRAY],[5,2,GRAY],[6,2,GRAY],
+    [1,3,BLACK],[2,3,BLACK],[3,3,BLACK],[4,3,BLACK],[5,3,BLACK],[6,3,BLACK],[7,3,BLACK],
+    [2,1,BLACK],[6,1,BLACK],
+    [3,3,BLACK],[4,3,WHITE],[5,3,BLACK],[6,3,BLACK],
+    [4,4,PINK],[5,4,PINK],
+    [7,2,WHITE],[8,2,WHITE],[8,1,WHITE],
+    [2,8,WHITE],[3,8,WHITE],[5,8,WHITE],[6,8,WHITE],
+];
+
+// Draw
+const container = document.getElementById('icons');
+
+// Idle (was Waiting) - 32x32 centered
+const idleDiv = document.createElement('div');
+idleDiv.className = 'icon-container';
+idleDiv.innerHTML = '<div class="icon-box"><canvas id="idleCanvas"></canvas></div><div class="label">Idle (was Waiting)</div>';
+container.appendChild(idleDiv);
+drawIcon('idleCanvas', waitingPixels_0, 12, 12);
+let idleFrame = 0;
+setInterval(() => {
+    drawIcon('idleCanvas', idleFrame === 0 ? waitingPixels_0 : waitingPixels_1, 12, 12);
+    idleFrame = 1 - idleFrame;
+}, 750);
+
+// Waiting (was Idle) - 32x32 centered
+const waitingDiv = document.createElement('div');
+waitingDiv.className = 'icon-container';
+waitingDiv.innerHTML = '<div class="icon-box"><canvas id="waitingCanvas"></canvas></div><div class="label">Waiting (was Idle)</div>';
+container.appendChild(waitingDiv);
+drawIcon('waitingCanvas', idlePixels_0, 12, 13);
+let waitFrame = 0;
+setInterval(() => {
+    drawIcon('waitingCanvas', waitFrame === 0 ? idlePixels_0 : idlePixels_1, 12, 13);
+    waitFrame = 1 - waitFrame;
+}, 750);
+
+// Running - 32x32 centered (offset 4, 8)
+const runningDiv = document.createElement('div');
+runningDiv.className = 'icon-container';
+runningDiv.innerHTML = '<div class="icon-box"><canvas id="runningCanvas"></canvas></div><div class="label">Running</div>';
+container.appendChild(runningDiv);
+let runningFrame = 0;
+setInterval(() => {
+    drawIcon('runningCanvas', runningFrames[runningFrame], 4, 8);
+    runningFrame = (runningFrame + 1) % 4;
+}, 120);
+
+// Approval
+const approvalDiv = document.createElement('div');
+approvalDiv.className = 'icon-container';
+approvalDiv.innerHTML = '<div class="icon-box"><canvas id="approvalCanvas"></canvas></div><div class="label">Approval</div>';
+container.appendChild(approvalDiv);
+drawIcon('approvalCanvas', approvalPixels, 12, 12);
+
+</script>
+</body>
+</html>

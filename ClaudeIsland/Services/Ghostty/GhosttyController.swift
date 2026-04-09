@@ -19,196 +19,116 @@ actor GhosttyController {
 
     // MARK: - Public API
 
-    /// Focus the Ghostty window containing a Claude process with the given PID
+    /// Focus the frontmost Ghostty window (where Claude is likely running)
     func focusWindow(forClaudePid claudePid: Int) async -> Bool {
-        // Find the Ghostty window that contains this process
-        guard let (windowId, terminalId) = await findGhosttyWindow(forProcess: claudePid) else {
-            Self.logger.debug("Could not find Ghostty window for PID \(claudePid, privacy: .public)")
-            return false
-        }
-
-        return await focusTerminal(windowId: windowId, terminalId: terminalId)
-    }
-
-    /// Send a key press to the Ghostty terminal
-    func sendKey(_ key: String, modifiers: [String] = [], to claudePid: Int) async -> Bool {
-        guard let (windowId, terminalId) = await findGhosttyWindow(forProcess: claudePid) else {
-            return false
-        }
-
-        return await sendKeyToTerminal(key: key, modifiers: modifiers, windowId: windowId, terminalId: terminalId)
-    }
-
-    /// Send text input to the Ghostty terminal
-    func sendText(_ text: String, to claudePid: Int) async -> Bool {
-        guard let (windowId, terminalId) = await findGhosttyWindow(forProcess: claudePid) else {
-            return false
-        }
-
-        return await inputTextToTerminal(text: text, windowId: windowId, terminalId: terminalId)
-    }
-
-    // MARK: - Private Methods
-
-    /// Find the Ghostty window and terminal ID for a given process PID
-    private func findGhosttyWindow(forProcess pid: Int) async -> (windowId: Int, terminalId: Int)? {
-        // First check if the process is running in Ghostty
-        let tree = ProcessTreeBuilder.shared.buildTree()
-
-        // Walk up the process tree to find Ghostty
-        var currentPid = pid
-        var depth = 0
-        var ghosttyPid: Int?
-
-        while currentPid > 1 && depth < 20 {
-            guard let info = tree[currentPid] else { break }
-
-            if info.command.lowercased().contains("ghostty") {
-                ghosttyPid = currentPid
-                break
-            }
-
-            currentPid = info.ppid
-            depth += 1
-        }
-
-        guard let targetGhosttyPid = ghosttyPid else {
-            return nil
-        }
-
-        // Now find the Ghostty window with this PID using AppleScript
+        // Use activate to bring Ghostty to front (safer than set frontmost)
         let script = """
         tell application "Ghostty"
-            set matchedWindow to null
-            set matchedTerminal to null
-
-            repeat with w in windows
-                repeat with t in terminals of w
-                    if (pid of t) = \(targetGhosttyPid) then
-                        set matchedWindow to w
-                        set matchedTerminal to t
-                        exit repeat
-                    end if
-                end repeat
-                if matchedWindow is not null then exit repeat
-            end repeat
-
-            if matchedWindow is null then
-                return "NOT_FOUND"
+            if (count of windows) > 0 then
+                activate
+                return "OK"
             end if
-
-            return (id of matchedWindow as string) & "|" & (id of matchedTerminal as string)
+            return "NO_WINDOW"
         end tell
         """
 
         do {
             let output = try await runAppleScript(script)
-            let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
-
-            if trimmed == "NOT_FOUND" || trimmed.isEmpty {
-                return nil
-            }
-
-            let parts = trimmed.components(separatedBy: "|")
-            guard parts.count >= 2,
-                  let windowId = Int(parts[0]),
-                  let terminalId = Int(parts[1]) else {
-                return nil
-            }
-
-            return (windowId, terminalId)
+            return output.contains("OK")
         } catch {
-            Self.logger.error("AppleScript error: \(error.localizedDescription, privacy: .public)")
-            return nil
-        }
-    }
-
-    /// Focus a specific terminal in Ghostty
-    private func focusTerminal(windowId: Int, terminalId: Int) async -> Bool {
-        let script = """
-        tell application "Ghostty"
-            set targetWindow to window id \(windowId)
-            set targetTerminal to terminal id \(terminalId)
-
-            set frontmost of targetWindow to true
-            delay 0.05
-            focus targetTerminal
-        end tell
-        """
-
-        do {
-            _ = try await runAppleScript(script)
-            return true
-        } catch {
-            Self.logger.error("Failed to focus Ghostty window: \(error.localizedDescription, privacy: .public)")
+            Self.logger.error("Failed to focus Ghostty: \(error.localizedDescription, privacy: .public)")
             return false
         }
     }
 
-    /// Send a key to a Ghostty terminal
-    private func sendKeyToTerminal(key: String, modifiers: [String], windowId: Int, terminalId: Int) async -> Bool {
-        var modList = ""
-        if !modifiers.isEmpty {
-            modList = modifiers.joined(separator: ",")
+    /// Send text input to a specific Ghostty terminal based on working directory
+    func sendText(_ text: String, to claudePid: Int) async -> Bool {
+        // Get working directory for this PID
+        guard let cwd = ProcessTreeBuilder.shared.getWorkingDirectory(forPid: claudePid) else {
+            print("DEBUG Ghostty: Could not get working directory for pid \(claudePid)")
+            return false
         }
+        print("DEBUG Ghostty: PID \(claudePid) cwd = \(cwd)")
 
-        let script: String
-        if modList.isEmpty {
-            script = """
-            tell application "Ghostty"
-                set targetWindow to window id \(windowId)
-                set targetTerminal to terminal id \(terminalId)
+        // Escape special characters in the text for AppleScript
+        let escapedText = text
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+        print("DEBUG Ghostty: Sending text: \(text)")
 
-                focus targetTerminal
-                delay 0.05
-                send key "\(key)" of targetTerminal
-            end tell
-            """
-        } else {
-            script = """
-            tell application "Ghostty"
-                set targetWindow to window id \(windowId)
-                set targetTerminal to terminal id \(terminalId)
+        // Find the terminal with matching working directory, activate, then send text and enter
+        let script = """
+        tell application "Ghostty"
+            set targetTerminal to null
+            repeat with w in windows
+                repeat with t in terminals of w
+                    if (working directory of t) = "\(cwd)" then
+                        set targetTerminal to t
+                        exit repeat
+                    end if
+                end repeat
+                if targetTerminal is not null then exit repeat
+            end repeat
 
-                focus targetTerminal
-                delay 0.05
-                send key "\(key)" with modifiers {\(modList)} of targetTerminal
-            end tell
-            """
-        }
+            if targetTerminal is null then return "NO_TERMINAL"
+            activate
+            delay 0.2
+            input text "\(escapedText)" to targetTerminal
+            delay 0.15
+            send key "enter" to targetTerminal
+            return "SENT"
+        end tell
+        """
 
         do {
-            _ = try await runAppleScript(script)
-            return true
+            let output = try await runAppleScript(script)
+            print("DEBUG Ghostty: AppleScript output: \(output)")
+            if output.contains("NO_TERMINAL") {
+                Self.logger.debug("No Ghostty terminal found with cwd: \(cwd, privacy: .public)")
+                return false
+            }
+            return output.contains("SENT")
+        } catch {
+            Self.logger.error("Failed to send text to Ghostty: \(error.localizedDescription, privacy: .public)")
+            print("DEBUG Ghostty: Error: \(error)")
+            return false
+        }
+    }
+
+    /// Send a key press to the frontmost Ghostty terminal
+    func sendKey(_ key: String, modifiers: [String] = [], to claudePid: Int) async -> Bool {
+        let modStr = modifiers.isEmpty ? "" : " with modifiers {\(modifiers.joined(separator: ","))}"
+
+        let script = """
+        tell application "Ghostty"
+            if (count of windows) = 0 then return "NO_WINDOW"
+
+            set frontmost of front window to true
+            delay 0.1
+
+            send key "\(key)"\(modStr) to front terminal
+        end tell
+        """
+
+        do {
+            let output = try await runAppleScript(script)
+            return !output.contains("NO_WINDOW")
         } catch {
             Self.logger.error("Failed to send key to Ghostty: \(error.localizedDescription, privacy: .public)")
             return false
         }
     }
 
-    /// Send text input to a Ghostty terminal
-    private func inputTextToTerminal(text: String, windowId: Int, terminalId: Int) async -> Bool {
-        // Escape quotes in the text
-        let escapedText = text.replacingOccurrences(of: "\"", with: "\\\"")
+    // MARK: - Private Methods
 
-        let script = """
-        tell application "Ghostty"
-            set targetWindow to window id \(windowId)
-            set targetTerminal to terminal id \(terminalId)
-
-            focus targetTerminal
-            delay 0.05
-            input text "\(escapedText)" of targetTerminal
-        end tell
-        """
-
-        do {
-            _ = try await runAppleScript(script)
-            return true
-        } catch {
-            Self.logger.error("Failed to input text to Ghostty: \(error.localizedDescription, privacy: .public)")
-            return false
-        }
+    /// Escape string for use in AppleScript
+    private func escapeForAppleScript(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\t", with: "\\t")
     }
 
     /// Run an AppleScript command and return output

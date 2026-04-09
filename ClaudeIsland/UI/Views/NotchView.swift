@@ -10,6 +10,12 @@ import CoreGraphics
 import SwiftUI
 import Combine
 
+// MARK: - Notification Names
+
+extension Notification.Name {
+    static let keepNotchVisibleDidChange = Notification.Name("keepNotchVisibleDidChange")
+}
+
 // Corner radius constants
 private let cornerRadiusInsets = (
     opened: (top: CGFloat(19), bottom: CGFloat(24)),
@@ -229,8 +235,8 @@ struct NotchView: View {
                 isVisible = true
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
-            // Re-read keepNotchVisible when UserDefaults changes
+        .onReceive(NotificationCenter.default.publisher(for: .keepNotchVisibleDidChange)) { _ in
+            // Re-read keepNotchVisible when menu changes the setting
             let newValue = UserDefaults.standard.bool(forKey: "keepNotchVisible")
             if newValue != keepNotchVisible {
                 keepNotchVisible = newValue
