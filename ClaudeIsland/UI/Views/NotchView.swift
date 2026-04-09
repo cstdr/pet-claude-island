@@ -441,7 +441,13 @@ struct NotchView: View {
             }
         case .closed:
             // Don't hide on non-notched devices - users need a visible target
-            guard viewModel.hasPhysicalNotch else { return }
+            if !viewModel.hasPhysicalNotch {
+                // On non-notched devices, keep visible if setting enabled and sessions exist
+                let keepVisible = UserDefaults.standard.bool(forKey: "keepNotchVisible")
+                if keepVisible && !sessionMonitor.instances.isEmpty {
+                    return
+                }
+            }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                 if self.viewModel.status == .closed && !self.isAnyProcessing && !self.hasPendingPermission && !self.hasWaitingForInput && !self.activityCoordinator.expandingActivity.show {
                     // Keep visible if setting enabled and sessions exist
