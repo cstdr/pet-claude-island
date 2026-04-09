@@ -21,7 +21,6 @@ struct NotchMenuView: View {
     @State private var hooksInstalled: Bool = false
     @State private var launchAtLogin: Bool = false
     @State private var keepNotchVisible: Bool = false
-    @State private var waitingDuration: Int = 30
 
     var body: some View {
         VStack(spacing: 4) {
@@ -88,19 +87,6 @@ struct NotchMenuView: View {
                 UserDefaults.standard.set(keepNotchVisible, forKey: "keepNotchVisible")
             }
 
-            // Waiting duration cycle button
-            MenuToggleRow(
-                icon: "clock",
-                label: String(localized: "Waiting Duration"),
-                isOn: false
-            ) {
-                let durations = [30, 60, 120, 300]
-                let idx = durations.firstIndex(of: waitingDuration) ?? 0
-                let next = durations[(idx + 1) % durations.count]
-                waitingDuration = next
-                UserDefaults.standard.set(next, forKey: "waitingDisplayDuration")
-            }
-
             // Language selector
             LanguageRow()
 
@@ -151,8 +137,6 @@ struct NotchMenuView: View {
         hooksInstalled = HookInstaller.isInstalled()
         launchAtLogin = SMAppService.mainApp.status == .enabled
         keepNotchVisible = UserDefaults.standard.bool(forKey: "keepNotchVisible")
-        let savedDuration = UserDefaults.standard.integer(forKey: "waitingDisplayDuration")
-        waitingDuration = savedDuration > 0 ? savedDuration : 30
         screenSelector.refreshScreens()
     }
 }
