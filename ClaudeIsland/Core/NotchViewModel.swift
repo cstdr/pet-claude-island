@@ -45,6 +45,8 @@ class NotchViewModel: ObservableObject {
     @Published var openReason: NotchOpenReason = .unknown
     @Published var contentType: NotchContentType = .instances
     @Published var isHovering: Bool = false
+    @Published var lastEvent: String = ""
+    @Published var eventLog: [String] = []
 
     // MARK: - Dependencies
 
@@ -95,6 +97,17 @@ class NotchViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let events = EventMonitors.shared
     private var hoverTimer: DispatchWorkItem?
+    private var lastClickTime: Date = .distantPast
+
+    private func logEvent(_ msg: String) {
+        let timestamp = Date().timeIntervalSince1970
+        let entry = "[\(String(format: "%.1f", timestamp))] \(msg)"
+        eventLog.append(entry)
+        // Keep only last 20 events
+        if eventLog.count > 20 {
+            eventLog.removeFirst()
+        }
+    }
 
     // MARK: - Initialization
 
@@ -125,6 +138,8 @@ class NotchViewModel: ObservableObject {
         events.mouseLocation
             .throttle(for: .milliseconds(50), scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] location in
+                self?.lastEvent = "mouseLocation: \(String(format: "%.1f", location.x)),\(String(format: "%.1f", location.y))"
+                self?.logEvent("mouseLocation: \(String(format: "%.1f", location.x)),\(String(format: "%.1f", location.y))")
                 self?.handleMouseMove(location)
             }
             .store(in: &cancellables)
@@ -132,6 +147,8 @@ class NotchViewModel: ObservableObject {
         events.mouseDown
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
+                self?.lastEvent = "mouseDown"
+                self?.logEvent("mouseDown")
                 self?.handleMouseDown()
             }
             .store(in: &cancellables)
@@ -152,6 +169,8 @@ class NotchViewModel: ObservableObject {
 
         let newHovering = inNotch || inOpened
 
+        print("[ViewModel] handleMouseMove: loc=\(location), inNotch=\(inNotch), inOpened=\(inOpened), status=\(status), isHovering=\(isHovering)->\(newHovering)")
+
         // Only update if changed to prevent unnecessary re-renders
         guard newHovering != isHovering else { return }
 
@@ -161,35 +180,62 @@ class NotchViewModel: ObservableObject {
         hoverTimer?.cancel()
         hoverTimer = nil
 
+        // TEMPORARILY DISABLED: Hover auto-open causes issues
         // Start hover timer to auto-expand after 1 second
-        if isHovering && (status == .closed || status == .popping) {
-            let workItem = DispatchWorkItem { [weak self] in
-                guard let self = self, self.isHovering else { return }
-                self.notchOpen(reason: .hover)
-            }
-            hoverTimer = workItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
-        }
+        // if isHovering && (status == .closed || status == .popping) {
+        //     print("[ViewModel] handleMouseMove: starting hover timer to open")
+        //     let workItem = DispatchWorkItem { [weak self] in
+        //         guard let self = self, self.isHovering else { return }
+        //         print("[ViewModel] hover timer firing, calling notchOpen")
+        //         self.notchOpen(reason: .hover)
+        //     }
+        //     hoverTimer = workItem
+        //     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
+        // }
     }
 
     private func handleMouseDown() {
         let location = NSEvent.mouseLocation
 
+        logEvent("handleMouseDown: status=\(status), loc=\(location), isInChatMode=\(isInChatMode)")
+        if status == .opened {
+            let outsidePanel = geometry.isPointOutsidePanel(location, size: openedSize)
+            let inNotch = geometry.notchScreenRect.contains(location)
+            logEvent("  opened case: outsidePanel=\(outsidePanel), inNotch=\(inNotch)")
+        }
+
         switch status {
         case .opened:
             if geometry.isPointOutsidePanel(location, size: openedSize) {
-                notchClose()
+                // Check Keep Visible - if enabled, minimize to icon instead of closing
+                let keepVisible = UserDefaults.standard.bool(forKey: "keepNotchVisible")
+                if keepVisible {
+                    logEvent("  -> Keep Visible enabled, minimizing to icon")
+                    notchMinimize()
+                } else {
+                    logEvent("  -> calling notchClose (outside panel)")
+                    notchClose()
+                }
                 // Re-post the click so it reaches the window/app behind us
                 repostClickAt(location)
             } else if geometry.notchScreenRect.contains(location) {
                 // Clicking notch while opened - only close if NOT in chat mode
                 if !isInChatMode {
+                    logEvent("  -> calling notchClose (in notch, not chat mode)")
                     notchClose()
+                    // Don't allow immediate re-open to prevent click bounce
+                    lastClickTime = Date()
                 }
             }
         case .closed, .popping:
+            // Prevent click bounce: ignore clicks within 0.3s of last close
+            if Date().timeIntervalSince(lastClickTime) < 0.3 {
+                logEvent("  -> ignoring rapid click")
+                return
+            }
             if geometry.isPointInNotch(location) {
                 notchOpen(reason: .click)
+                lastClickTime = Date()
             }
         }
     }
@@ -228,8 +274,10 @@ class NotchViewModel: ObservableObject {
     // MARK: - Actions
 
     func notchOpen(reason: NotchOpenReason = .unknown) {
+        logEvent("notchOpen called, reason=\(reason), current status=\(status)")
         openReason = reason
         status = .opened
+        logEvent("notchOpen done, status now: \(status)")
 
         // Don't restore chat on notification - show instances list instead
         if reason == .notification {
@@ -248,12 +296,26 @@ class NotchViewModel: ObservableObject {
     }
 
     func notchClose() {
+        logEvent("notchClose called, status=\(status), openReason=\(String(describing: openReason))")
         // Save chat session before closing if in chat mode
         if case .chat(let session) = contentType {
             currentChatSession = session
         }
         status = .closed
         contentType = .instances
+        logEvent("notchClose done, status now: \(status)")
+    }
+
+    /// Minimize to icon (keep visible) instead of fully closing
+    func notchMinimize() {
+        logEvent("notchMinimize called, status=\(status)")
+        // Save chat session before closing if in chat mode
+        if case .chat(let session) = contentType {
+            currentChatSession = session
+        }
+        status = .closed
+        contentType = .instances
+        logEvent("notchMinimize done, status now: \(status)")
     }
 
     func notchPop() {

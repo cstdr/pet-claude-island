@@ -34,6 +34,9 @@ struct NotchView: View {
     @State private var isVisible: Bool = false
     @State private var isHovering: Bool = false
     @State private var isBouncing: Bool = false
+    @State private var debugMessage: String = ""
+    @State private var showDebug: Bool = false
+    @State private var eventLog: String = ""
 
     /// The primary phase for displaying cat icon animation
     private var primaryPhase: SessionPhase {
@@ -201,6 +204,10 @@ struct NotchView: View {
                         }
                     }
                     .onTapGesture {
+                        // Update debug info
+                        let keepVisible = UserDefaults.standard.bool(forKey: "keepNotchVisible")
+                        debugMessage = "status: \(viewModel.status)\nkeepVisible: \(keepVisible)\ninstances: \(sessionMonitor.instances.count)\nhasPhysicalNotch: \(viewModel.hasPhysicalNotch)"
+                        showDebug = true
                         if viewModel.status != .opened {
                             viewModel.notchOpen(reason: .click)
                         }
@@ -241,6 +248,14 @@ struct NotchView: View {
             if newValue != keepNotchVisible {
                 keepNotchVisible = newValue
             }
+        }
+        .onChange(of: viewModel.lastEvent) { _, newEvent in
+            eventLog = newEvent
+        }
+        .alert("Debug Status", isPresented: $showDebug) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("\(debugMessage)\n\nLast Event: \(eventLog)\n\nEvent Log:\n\(viewModel.eventLog.joined(separator: "\n"))")
         }
     }
 
@@ -410,7 +425,14 @@ struct NotchView: View {
     private func handleProcessingChange() {
         // Check Keep Visible first - if enabled and sessions exist, keep showing
         let keepVisible = UserDefaults.standard.bool(forKey: "keepNotchVisible")
-        if keepVisible && !sessionMonitor.instances.isEmpty {
+        let instancesCount = sessionMonitor.instances.count
+        print("[DEBUG] handleProcessingChange: keepVisible=\(keepVisible), instances=\(instancesCount), status=\(viewModel.status)")
+        if keepVisible && instancesCount > 0 {
+            print("[DEBUG] handleProcessingChange: Keep Visible enabled, keeping notch visible")
+            // Still need to show activity if processing
+            if isAnyProcessing || hasPendingPermission {
+                activityCoordinator.showActivity(type: .claude)
+            }
             isVisible = true
             return
         }
@@ -431,7 +453,9 @@ struct NotchView: View {
             // Don't hide on non-notched devices - users need a visible target
             if viewModel.status == .closed && viewModel.hasPhysicalNotch {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    print("[DEBUG] asyncAfter 0.5s: checking if should hide, status=\(self.viewModel.status), keepVisible=\(UserDefaults.standard.bool(forKey: "keepNotchVisible"))")
                     if !self.isAnyProcessing && !self.hasPendingPermission && !self.hasWaitingForInput && self.viewModel.status == .closed {
+                        print("[DEBUG] asyncAfter: setting isVisible = false")
                         self.isVisible = false
                     }
                 }
@@ -440,6 +464,7 @@ struct NotchView: View {
     }
 
     private func handleStatusChange(from oldStatus: NotchStatus, to newStatus: NotchStatus) {
+        print("[DEBUG] handleStatusChange: \(oldStatus) -> \(newStatus)")
         switch newStatus {
         case .opened, .popping:
             isVisible = true
@@ -457,12 +482,15 @@ struct NotchView: View {
                 }
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                print("[DEBUG] handleStatusChange asyncAfter 0.35s: status=\(self.viewModel.status), keepVisible=\(UserDefaults.standard.bool(forKey: "keepNotchVisible")), instances=\(self.sessionMonitor.instances.count)")
                 if self.viewModel.status == .closed && !self.isAnyProcessing && !self.hasPendingPermission && !self.hasWaitingForInput && !self.activityCoordinator.expandingActivity.show {
                     // Keep visible if setting enabled and sessions exist
                     let keepVisible = UserDefaults.standard.bool(forKey: "keepNotchVisible")
                     if keepVisible && !self.sessionMonitor.instances.isEmpty {
+                        print("[DEBUG] handleStatusChange asyncAfter: Keep Visible, keeping visible")
                         return
                     }
+                    print("[DEBUG] handleStatusChange asyncAfter: setting isVisible = false")
                     self.isVisible = false
                 }
             }

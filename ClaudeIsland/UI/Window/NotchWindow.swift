@@ -67,6 +67,7 @@ class NotchPanel: NSPanel {
     // MARK: - Click-through for areas outside the panel content
 
     override func sendEvent(_ event: NSEvent) {
+        print("[Window] sendEvent: \(event.type), location: \(event.locationInWindow)")
         // For mouse events, check if we should pass through
         if event.type == .leftMouseDown || event.type == .leftMouseUp ||
            event.type == .rightMouseDown || event.type == .rightMouseUp {
@@ -83,6 +84,7 @@ class NotchPanel: NSPanel {
 
                 // Re-post the event after a tiny delay
                 DispatchQueue.main.async { [weak self] in
+                    print("[Window] reposing mouse event")
                     self?.repostMouseEvent(event, at: screenLocation)
                 }
                 return
