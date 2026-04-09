@@ -21,7 +21,7 @@ struct NotchView: View {
     @StateObject private var sessionMonitor = ClaudeSessionMonitor()
     @StateObject private var activityCoordinator = NotchActivityCoordinator.shared
     @ObservedObject private var updateManager = UpdateManager.shared
-    @AppStorage("keepNotchVisible") private var keepNotchVisible = false
+    @State private var keepNotchVisible: Bool = false
     @State private var previousPendingIds: Set<String> = []
     @State private var previousWaitingForInputIds: Set<String> = []
     @State private var waitingForInputTimestamps: [String: Date] = [:]  // sessionId -> when it entered waitingForInput
@@ -210,6 +210,8 @@ struct NotchView: View {
             if !viewModel.hasPhysicalNotch {
                 isVisible = true
             }
+            // Initialize keepNotchVisible from UserDefaults
+            keepNotchVisible = UserDefaults.standard.bool(forKey: "keepNotchVisible")
         }
         .onChange(of: viewModel.status) { oldStatus, newStatus in
             handleStatusChange(from: oldStatus, to: newStatus)
@@ -225,6 +227,13 @@ struct NotchView: View {
             // When Keep Visible is enabled and sessions exist, show the notch
             if newValue && !sessionMonitor.instances.isEmpty && viewModel.status == .closed {
                 isVisible = true
+            }
+        }
+        .onReceive(UserDefaults.didChangeNotification) { _ in
+            // Re-read keepNotchVisible when UserDefaults changes
+            let newValue = UserDefaults.standard.bool(forKey: "keepNotchVisible")
+            if newValue != keepNotchVisible {
+                keepNotchVisible = newValue
             }
         }
     }
@@ -411,7 +420,8 @@ struct NotchView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     if !self.isAnyProcessing && !self.hasPendingPermission && !self.hasWaitingForInput && self.viewModel.status == .closed {
                         // Keep visible if setting enabled and sessions exist
-                        if self.keepNotchVisible && !self.sessionMonitor.instances.isEmpty {
+                        let keepVisible = UserDefaults.standard.bool(forKey: "keepNotchVisible")
+                        if keepVisible && !self.sessionMonitor.instances.isEmpty {
                             return
                         }
                         self.isVisible = false
@@ -435,7 +445,8 @@ struct NotchView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                 if self.viewModel.status == .closed && !self.isAnyProcessing && !self.hasPendingPermission && !self.hasWaitingForInput && !self.activityCoordinator.expandingActivity.show {
                     // Keep visible if setting enabled and sessions exist
-                    if self.keepNotchVisible && !self.sessionMonitor.instances.isEmpty {
+                    let keepVisible = UserDefaults.standard.bool(forKey: "keepNotchVisible")
+                    if keepVisible && !self.sessionMonitor.instances.isEmpty {
                         return
                     }
                     self.isVisible = false
