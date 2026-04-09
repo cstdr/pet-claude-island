@@ -1,0 +1,51 @@
+/* General */
+"Back" = "Back";
+"Screen" = "Screen";
+"Notification Sound" = "Notification Sound";
+"Launch at Login" = "Launch at Login";
+"Hooks" = "Hooks";
+"Accessibility" = "Accessibility";
+"Keep Visible" = "Keep Visible";
+"Waiting Duration" = "Waiting Duration";
+"Language" = "Language";
+"Check for Updates" = "Check for Updates";
+"Star on GitHub" = "Star on GitHub";
+"Quit" = "Quit";
+
+/* Status */
+"Idle" = "Idle";
+"Waiting" = "Waiting";
+"Processing" = "Processing";
+"Approval" = "Approval";
+
+/* Actions */
+"Allow" = "Allow";
+"Deny" = "Deny";
+"Approve" = "Approve";
+"Reject" = "Reject";
+"Archive" = "Archive";
+"Chat" = "Chat";
+"Terminal" = "Terminal";
+
+/* Session */
+"No sessions" = "No sessions";
+"Run claude in terminal" = "Run claude in terminal";
+"Needs your input" = "Needs your input";
+"You:" = "You:";
+
+/* Update states */
+"Up to date" = "Up to date";
+"Checking..." = "Checking...";
+"Download Update" = "Download Update";
+"Downloading..." = "Downloading...";
+"Extracting..." = "Extracting...";
+"Install & Relaunch" = "Install & Relaunch";
+"Installing..." = "Installing...";
+"Update failed" = "Update failed";
+"Retry" = "Retry";
+
+/* Settings values */
+"30s" = "30s";
+"1m" = "1m";
+"2m" = "2m";
+"5m" = "5m";

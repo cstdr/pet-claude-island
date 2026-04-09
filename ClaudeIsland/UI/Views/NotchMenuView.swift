@@ -76,6 +76,15 @@ struct NotchMenuView: View {
                 }
             }
 
+            // Keep notch visible when sessions exist
+            KeepVisibleRow()
+
+            // Waiting duration cycle button
+            DurationRow()
+
+            // Language selector
+            LanguageRow()
+
             AccessibilityRow(isEnabled: AXIsProcessTrusted())
 
             Divider()
@@ -518,6 +527,217 @@ struct MenuToggleRow: View {
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }
+    }
+
+    private var textColor: Color {
+        .white.opacity(isHovered ? 1.0 : 0.7)
+    }
+}
+
+// MARK: - Duration Row
+
+struct DurationRow: View {
+    @State private var isHovered = false
+
+    private let durations = [30, 60, 120, 300]
+
+    private var currentDuration: Int {
+        AppSettings.waitingDisplayDuration
+    }
+
+    private var durationLabel: String {
+        switch currentDuration {
+        case 30: return "30s"
+        case 60: return "1m"
+        case 120: return "2m"
+        case 300: return "5m"
+        default: return "\(currentDuration)s"
+        }
+    }
+
+    var body: some View {
+        Button {
+            // Cycle to next duration
+            let idx = durations.firstIndex(of: currentDuration) ?? 0
+            let next = durations[(idx + 1) % durations.count]
+            AppSettings.waitingDisplayDuration = next
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "clock")
+                    .font(.system(size: 12))
+                    .foregroundColor(textColor)
+                    .frame(width: 16)
+
+                Text(String(localized: "Waiting Duration"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(textColor)
+
+                Spacer()
+
+                Text(durationLabel)
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.5))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isHovered ? Color.white.opacity(0.08) : Color.clear)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+    }
+
+    private var textColor: Color {
+        .white.opacity(isHovered ? 1.0 : 0.7)
+    }
+}
+
+// MARK: - Keep Visible Row
+
+struct KeepVisibleRow: View {
+    @AppStorage("keepNotchVisible") private var keepNotchVisible = false
+    @State private var isHovered = false
+
+    var body: some View {
+        Button {
+            keepNotchVisible.toggle()
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "eye")
+                    .font(.system(size: 12))
+                    .foregroundColor(textColor)
+                    .frame(width: 16)
+
+                Text(String(localized: "Keep Visible"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(textColor)
+
+                Spacer()
+
+                Circle()
+                    .fill(keepNotchVisible ? TerminalColors.green : Color.white.opacity(0.3))
+                    .frame(width: 6, height: 6)
+
+                Text(keepNotchVisible ? "On" : "Off")
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.4))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isHovered ? Color.white.opacity(0.08) : Color.clear)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+    }
+
+    private var textColor: Color {
+        .white.opacity(isHovered ? 1.0 : 0.7)
+    }
+}
+
+// MARK: - Language Row
+
+struct LanguageRow: View {
+    @AppStorage("language") private var language: String?
+    @State private var isHovered = false
+    @State private var isExpanded = false
+    @State private var selectedCode: String? = nil
+
+    private let languages = [
+        ("System", nil as String?),
+        ("English", "en"),
+        ("简体中文", "zh-Hans")
+    ]
+
+    private var currentLabel: String {
+        let lang = selectedCode ?? language
+        return languages.first { $0.1 == lang }?.0 ?? "System"
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Button {
+                isExpanded.toggle()
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "globe")
+                        .font(.system(size: 12))
+                        .foregroundColor(textColor)
+                        .frame(width: 16)
+
+                    Text(String(localized: "Language"))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(textColor)
+
+                    Spacer()
+
+                    Text(currentLabel)
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.5))
+
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 8))
+                        .foregroundColor(.white.opacity(0.4))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isHovered ? Color.white.opacity(0.08) : Color.clear)
+                )
+            }
+            .buttonStyle(.plain)
+            .onHover { isHovered = $0 }
+
+            if isExpanded {
+                VStack(spacing: 0) {
+                    ForEach(languages, id: \.0) { name, code in
+                        Button {
+                            selectedCode = code
+                            // Save to UserDefaults
+                            if let c = code {
+                                UserDefaults.standard.set(c, forKey: "language")
+                                UserDefaults.standard.set([c], forKey: "AppleLanguages")
+                            } else {
+                                UserDefaults.standard.removeObject(forKey: "language")
+                                UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+                            }
+                            // Close dropdown
+                            isExpanded = false
+                        } label: {
+                            HStack(spacing: 10) {
+                                Text(name)
+                                    .font(.system(size: 12))
+                                    .foregroundColor((selectedCode ?? language) == code ? TerminalColors.green : Color.white.opacity(0.7))
+
+                                Spacer()
+
+                                if (selectedCode ?? language) == code {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundColor(TerminalColors.green)
+                                }
+                            }
+                            .padding(.horizontal, 38)
+                            .padding(.vertical, 8)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                // Hint text
+                Text("Reopen menu to apply")
+                    .font(.system(size: 10))
+                    .foregroundColor(.white.opacity(0.5))
+                    .padding(.top, 6)
+                    .padding(.bottom, 4)
+            }
+        }
     }
 
     private var textColor: Color {

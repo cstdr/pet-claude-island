@@ -1,0 +1,51 @@
+/* General */
+"Back" = "返回";
+"Screen" = "屏幕";
+"Notification Sound" = "通知声音";
+"Launch at Login" = "开机启动";
+"Hooks" = "Hooks";
+"Accessibility" = "无障碍";
+"Keep Visible" = "保持显示";
+"Waiting Duration" = "等待时长";
+"Language" = "语言";
+"Check for Updates" = "检查更新";
+"Star on GitHub" = "在 GitHub 上加星";
+"Quit" = "退出";
+
+/* Status */
+"Idle" = "空闲";
+"Waiting" = "等待";
+"Processing" = "运行中";
+"Approval" = "审批";
+
+/* Actions */
+"Allow" = "允许";
+"Deny" = "拒绝";
+"Approve" = "批准";
+"Reject" = "否决";
+"Archive" = "归档";
+"Chat" = "聊天";
+"Terminal" = "终端";
+
+/* Session */
+"No sessions" = "无会话";
+"Run claude in terminal" = "在终端运行 claude";
+"Needs your input" = "需要你的输入";
+"You:" = "你：";
+
+/* Update states */
+"Up to date" = "已是最新";
+"Checking..." = "检查中...";
+"Download Update" = "下载更新";
+"Downloading..." = "下载中...";
+"Extracting..." = "解压中...";
+"Install & Relaunch" = "安装并重启";
+"Installing..." = "安装中...";
+"Update failed" = "更新失败";
+"Retry" = "重试";
+
+/* Settings values */
+"30s" = "30秒";
+"1m" = "1分钟";
+"2m" = "2分钟";
+"5m" = "5分钟";

@@ -38,6 +38,9 @@ enum AppSettings {
 
     private enum Keys {
         static let notificationSound = "notificationSound"
+        static let waitingDisplayDuration = "waitingDisplayDuration"
+        static let keepNotchVisible = "keepNotchVisible"
+        static let language = "language"
     }
 
     // MARK: - Notification Sound
@@ -53,6 +56,43 @@ enum AppSettings {
         }
         set {
             defaults.set(newValue.rawValue, forKey: Keys.notificationSound)
+        }
+    }
+
+    // MARK: - Display Duration
+
+    /// How long to show the waiting-for-input indicator (in seconds)
+    static var waitingDisplayDuration: Int {
+        get {
+            let value = defaults.integer(forKey: Keys.waitingDisplayDuration)
+            return value > 0 ? value : 30 // Default 30 seconds
+        }
+        set {
+            defaults.set(newValue, forKey: Keys.waitingDisplayDuration)
+        }
+    }
+
+    // MARK: - Keep Notch Visible
+
+    /// Whether to keep the notch visible when sessions exist (even if idle)
+    static var keepNotchVisible: Bool {
+        get {
+            defaults.bool(forKey: Keys.keepNotchVisible)
+        }
+        set {
+            defaults.set(newValue, forKey: Keys.keepNotchVisible)
+        }
+    }
+
+    // MARK: - Language
+
+    /// App language preference (nil = system default)
+    static var language: String? {
+        get {
+            defaults.string(forKey: Keys.language)
+        }
+        set {
+            defaults.set(newValue, forKey: Keys.language)
         }
     }
 }
