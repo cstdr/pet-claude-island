@@ -599,12 +599,14 @@ struct DurationRow: View {
 // MARK: - Keep Visible Row
 
 struct KeepVisibleRow: View {
-    @AppStorage("keepNotchVisible") private var keepNotchVisible = false
+    @State private var keepNotchVisible = false
     @State private var isHovered = false
 
     var body: some View {
         Button {
-            keepNotchVisible.toggle()
+            let newValue = !keepNotchVisible
+            UserDefaults.standard.set(newValue, forKey: "keepNotchVisible")
+            keepNotchVisible = newValue
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "eye")
@@ -634,6 +636,9 @@ struct KeepVisibleRow: View {
             )
         }
         .buttonStyle(.plain)
+        .onAppear {
+            keepNotchVisible = UserDefaults.standard.bool(forKey: "keepNotchVisible")
+        }
         .onHover { isHovered = $0 }
     }
 
