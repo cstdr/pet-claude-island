@@ -21,9 +21,9 @@
 ## Features
 
 - **Animated Cat Icons** — Pixel-art cats (Gulu & Yiyi) animate in the menu bar notch
-  - Idle: sleeping cat
+  - Idle: sleeping cat with breathing animation
   - Waiting: sitting cat with wagging tail
-  - Processing: running cat animation
+  - Processing: running cat with white triangle face and pink nose
   - Approval: cat with raised paw
 - **Notch UI** — Animated overlay that expands from the MacBook notch
 - **Live Session Monitoring** — Track multiple Claude Code sessions in real-time
