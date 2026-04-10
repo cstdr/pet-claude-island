@@ -9,23 +9,64 @@ import SwiftUI
 import Combine
 
 // MARK: - Yarn Ball Spinner
+/// A yarn ball spinner that can be toggled on/off
+/// When isAnimating is true, the yarn ball rotates and bounces
+/// When isAnimating is false, the yarn ball remains static
 struct ProcessingSpinner: View {
-    @State private var phase: Double = 0
-    @State private var timerCancellable: AnyCancellable?
+    @StateObject private var animator = SpinnerAnimator()
+
+    var isAnimating: Bool = true
 
     var body: some View {
-        YarnBallShape(phase: phase)
+        YarnBallShape(phase: animator.phase)
             .frame(width: 14, height: 16)
             .onAppear {
-                timerCancellable = Timer.publish(every: 1.0 / 30.0, on: .main, in: .common)
-                    .autoconnect()
-                    .sink { _ in
-                        phase += 1.0 / 30.0
-                    }
+                animator.isAnimating = isAnimating
+                animator.updateAnimation()
+            }
+            .onChange(of: isAnimating) { _, newValue in
+                animator.isAnimating = newValue
+                animator.updateAnimation()
             }
             .onDisappear {
-                timerCancellable?.cancel()
+                animator.stop()
             }
+    }
+}
+
+// MARK: - Spinner Animator
+/// Manages the animation state - must be class for Timer closure to see updated values
+private class SpinnerAnimator: ObservableObject {
+    @Published var phase: Double = 0
+    var isAnimating: Bool = true
+
+    private var timer: Timer?
+
+    func updateAnimation() {
+        if isAnimating {
+            start()
+        } else {
+            stop()
+        }
+    }
+
+    func start() {
+        stop()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            if self.isAnimating {
+                self.phase += 1.0 / 30.0
+            }
+        }
+    }
+
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    deinit {
+        timer?.invalidate()
     }
 }
 
@@ -108,7 +149,7 @@ struct YarnBallShape: View {
 }
 
 #Preview {
-    ProcessingSpinner()
+    ProcessingSpinner(isAnimating: true)
         .frame(width: 40, height: 48)
         .background(.black)
 }

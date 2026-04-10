@@ -34,9 +34,6 @@ struct NotchView: View {
     @State private var isVisible: Bool = false
     @State private var isHovering: Bool = false
     @State private var isBouncing: Bool = false
-    @State private var debugMessage: String = ""
-    @State private var showDebug: Bool = false
-    @State private var eventLog: String = ""
 
     /// The primary phase for displaying cat icon animation
     private var primaryPhase: SessionPhase {
@@ -204,10 +201,6 @@ struct NotchView: View {
                         }
                     }
                     .onTapGesture {
-                        // Update debug info
-                        let keepVisible = UserDefaults.standard.bool(forKey: "keepNotchVisible")
-                        debugMessage = "status: \(viewModel.status)\nkeepVisible: \(keepVisible)\ninstances: \(sessionMonitor.instances.count)\nhasPhysicalNotch: \(viewModel.hasPhysicalNotch)"
-                        showDebug = true
                         if viewModel.status != .opened {
                             viewModel.notchOpen(reason: .click)
                         }
@@ -248,14 +241,6 @@ struct NotchView: View {
             if newValue != keepNotchVisible {
                 keepNotchVisible = newValue
             }
-        }
-        .onChange(of: viewModel.lastEvent) { _, newEvent in
-            eventLog = newEvent
-        }
-        .alert("Debug Status", isPresented: $showDebug) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("\(debugMessage)\n\nLast Event: \(eventLog)\n\nEvent Log:\n\(viewModel.eventLog.joined(separator: "\n"))")
         }
     }
 
@@ -330,18 +315,12 @@ struct NotchView: View {
                     .frame(width: closedNotchSize.width - cornerRadiusInsets.closed.top + (isBouncing ? 16 : 0))
             }
 
-            // Right side - spinner when processing/pending, checkmark when waiting for input
+            // Right side - yarn ball spinner when processing/pending, static yarn ball when waiting for input
+            let shouldAnimate = isAnyProcessing || hasPendingPermission
             if showClosedActivity {
-                if isProcessing || hasPendingPermission {
-                    ProcessingSpinner()
-                        .matchedGeometryEffect(id: "spinner", in: activityNamespace, isSource: showClosedActivity)
-                        .frame(width: viewModel.status == .opened ? 20 : sideWidth)
-                } else if hasWaitingForInput {
-                    // Checkmark for waiting-for-input on the right side
-                    ReadyForInputIndicatorIcon(size: 14, color: TerminalColors.green)
-                        .matchedGeometryEffect(id: "spinner", in: activityNamespace, isSource: showClosedActivity)
-                        .frame(width: viewModel.status == .opened ? 20 : sideWidth)
-                }
+                ProcessingSpinner(isAnimating: shouldAnimate)
+                    .id(shouldAnimate ? "spinner-animating" : "spinner-static")
+                    .frame(width: viewModel.status == .opened ? 20 : sideWidth)
             }
         }
         .frame(height: closedNotchSize.height)
