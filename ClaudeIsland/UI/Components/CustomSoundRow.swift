@@ -55,12 +55,6 @@ struct CustomSoundRow: View {
 
     private var rowHeader: some View {
         HStack(spacing: 0) {
-            // Icon
-            Image(systemName: iconName)
-                .font(.system(size: 12))
-                .foregroundColor(iconColor)
-                .frame(width: 16)
-
             // Label (clickable to expand/collapse when has custom sound)
             Text(type.displayName)
                 .font(.system(size: 13, weight: .medium))
@@ -73,13 +67,6 @@ struct CustomSoundRow: View {
 
             // Recording button
             recordButton
-
-            // Expand/Collapse chevron (only visible when has custom sound)
-            if hasCustomSound {
-                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 10))
-                    .foregroundColor(.white.opacity(0.4))
-            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -148,9 +135,6 @@ struct CustomSoundRow: View {
                 Text(selectedSoundLabel)
                     .font(.system(size: 11))
                     .foregroundColor(.white.opacity(0.6))
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 8))
-                    .foregroundColor(.white.opacity(0.4))
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
@@ -224,6 +208,7 @@ struct CustomSoundRow: View {
                 )
                 .frame(height: 24)
 
+
                 // Timer
                 Text(formatDuration(soundManager.recordingDuration))
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
@@ -250,16 +235,16 @@ struct CustomSoundRow: View {
                         Text(isCurrentlyPlaying ? "Stop" : "Preview")
                             .font(.system(size: 11, weight: .medium))
                     }
-                    .foregroundColor(TerminalColors.green)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(.vertical, 7)
+                    .foregroundColor(TerminalColors.green)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
                             .strokeBorder(TerminalColors.green.opacity(0.4), lineWidth: 1)
                     )
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .contentShape(Rectangle()) // Make entire button area clickable
                 .disabled(soundManager.isRecording != nil || !soundManager.hasCustomSound(for: type))
 
                 // Delete button
@@ -413,7 +398,7 @@ struct WaveformView: View {
                         .frame(height: barHeight(at: index), alignment: .center)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .center)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
     }
 
