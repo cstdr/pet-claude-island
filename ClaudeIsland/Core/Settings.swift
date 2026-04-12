@@ -31,6 +31,46 @@ enum NotificationSound: String, CaseIterable {
     }
 }
 
+/// Whether to use system sound or custom recording for a notification type
+enum SoundSource: String {
+    case system = "system"
+    case custom = "custom"
+}
+
+/// Settings for a specific notification type's sound
+struct NotificationTypeSoundSettings {
+    let type: NotificationType
+
+    private var sourceKey: String { "\(type.rawValue)SoundSource" }
+    private var systemSoundKey: String { "\(type.rawValue)SystemSound" }
+
+    var source: SoundSource {
+        get {
+            guard let raw = UserDefaults.standard.string(forKey: sourceKey),
+                  let source = SoundSource(rawValue: raw) else {
+                return .system
+            }
+            return source
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: sourceKey)
+        }
+    }
+
+    var systemSound: NotificationSound {
+        get {
+            guard let raw = UserDefaults.standard.string(forKey: systemSoundKey),
+                  let sound = NotificationSound(rawValue: raw) else {
+                return .pop
+            }
+            return sound
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: systemSoundKey)
+        }
+    }
+}
+
 enum AppSettings {
     private static let defaults = UserDefaults.standard
 
@@ -57,6 +97,11 @@ enum AppSettings {
         set {
             defaults.set(newValue.rawValue, forKey: Keys.notificationSound)
         }
+    }
+
+    /// Settings for each notification type's sound
+    static func soundSettings(for type: NotificationType) -> NotificationTypeSoundSettings {
+        return NotificationTypeSoundSettings(type: type)
     }
 
     // MARK: - Display Duration

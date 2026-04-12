@@ -30,6 +30,8 @@ struct NotchView: View {
     @State private var keepNotchVisible: Bool = false
     @State private var previousPendingIds: Set<String> = []
     @State private var previousWaitingForInputIds: Set<String> = []
+    @State private var previousWaitingForApprovalIds: Set<String> = []
+    @State private var previousProcessingIds: Set<String> = []
     @State private var waitingForInputTimestamps: [String: Date] = [:]  // sessionId -> when it entered waitingForInput
     @State private var isVisible: Bool = false
     @State private var isHovering: Bool = false
@@ -228,6 +230,8 @@ struct NotchView: View {
         .onChange(of: sessionMonitor.instances) { _, instances in
             handleProcessingChange()
             handleWaitingForInputChange(instances)
+            handleWaitingForApprovalChange(instances)
+            handleProcessingStartedSound(instances)
         }
         .onChange(of: keepNotchVisible) { oldValue, newValue in
             // When Keep Visible is enabled and sessions exist, show the notch
@@ -502,21 +506,8 @@ struct NotchView: View {
 
         // Bounce the notch when a session newly enters waitingForInput state
         if !newWaitingIds.isEmpty {
-            // Get the sessions that just entered waitingForInput
-            let newlyWaitingSessions = waitingForInputSessions.filter { newWaitingIds.contains($0.stableId) }
-
-            // Play notification sound if the session is not actively focused
-            if let soundName = AppSettings.notificationSound.soundName {
-                // Check if we should play sound (async check for tmux pane focus)
-                Task {
-                    let shouldPlaySound = await shouldPlayNotificationSound(for: newlyWaitingSessions)
-                    if shouldPlaySound {
-                        await MainActor.run {
-                            NSSound(named: soundName)?.play()
-                        }
-                    }
-                }
-            }
+            // Play sound immediately when state changes
+            CustomSoundManager.shared.playNotificationSound(for: .waiting)
 
             // Trigger bounce animation to get user's attention
             DispatchQueue.main.async {
@@ -538,22 +529,31 @@ struct NotchView: View {
         previousWaitingForInputIds = currentIds
     }
 
-    /// Determine if notification sound should play for the given sessions
-    /// Returns true if ANY session is not actively focused
-    private func shouldPlayNotificationSound(for sessions: [SessionState]) async -> Bool {
-        for session in sessions {
-            guard let pid = session.pid else {
-                // No PID means we can't check focus, assume not focused
-                return true
-            }
+    /// Handle waiting for approval state change - play permission sound
+    private func handleWaitingForApprovalChange(_ instances: [SessionState]) {
+        let waitingForApprovalSessions = instances.filter { $0.phase.isWaitingForApproval }
+        let currentIds = Set(waitingForApprovalSessions.map { $0.stableId })
+        let newIds = currentIds.subtracting(previousWaitingForApprovalIds)
 
-            let isFocused = await TerminalVisibilityDetector.isSessionFocused(sessionPid: pid)
-            if !isFocused {
-                return true
-            }
+        if !newIds.isEmpty {
+            // New permission request - play permission sound
+            CustomSoundManager.shared.playNotificationSound(for: .permission)
         }
 
-        return false
+        previousWaitingForApprovalIds = currentIds
+    }
+
+    /// Handle processing started - play processing sound when processing begins
+    private func handleProcessingStartedSound(_ instances: [SessionState]) {
+        let currentProcessingIds = Set(instances.filter { $0.phase == .processing || $0.phase == .compacting }.map { $0.stableId })
+        let newIds = currentProcessingIds.subtracting(previousProcessingIds)
+
+        if !newIds.isEmpty {
+            // New processing started - play processing sound
+            CustomSoundManager.shared.playNotificationSound(for: .processing)
+        }
+
+        previousProcessingIds = currentProcessingIds
     }
 }
 

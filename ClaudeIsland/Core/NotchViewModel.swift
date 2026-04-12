@@ -48,10 +48,12 @@ class NotchViewModel: ObservableObject {
     @Published var lastEvent: String = ""
     @Published var eventLog: [String] = []
 
+    /// Measured content height from NotchMenuView (set to 0 to always use fallback)
+    @Published var menuContentHeight: CGFloat = 0
+
     // MARK: - Dependencies
 
     private let screenSelector = ScreenSelector.shared
-    private let soundSelector = SoundSelector.shared
 
     // MARK: - Geometry
 
@@ -63,6 +65,10 @@ class NotchViewModel: ObservableObject {
     var screenRect: CGRect { geometry.screenRect }
     var windowHeight: CGFloat { geometry.windowHeight }
 
+    /// Minimum height for menu - set to 700pt to accommodate all menu items
+    /// Menu has ~19 rows (MenuRow ~36pt, dividers ~8pt, padding ~16pt) = ~700pt total
+    private let menuMinHeight: CGFloat = 700
+
     /// Dynamic opened size based on content type
     var openedSize: CGSize {
         switch contentType {
@@ -73,10 +79,11 @@ class NotchViewModel: ObservableObject {
                 height: 580
             )
         case .menu:
-            // Compact size for settings menu
+            // Use measured content height if available, otherwise fallback to minimum
+            let contentHeight = menuContentHeight > 0 ? menuContentHeight : menuMinHeight
             return CGSize(
                 width: min(screenRect.width * 0.4, 480),
-                height: 420 + screenSelector.expandedPickerHeight + soundSelector.expandedPickerHeight
+                height: contentHeight + screenSelector.expandedPickerHeight
             )
         case .instances:
             return CGSize(
@@ -97,7 +104,6 @@ class NotchViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let events = EventMonitors.shared
     private var hoverTimer: DispatchWorkItem?
-    private var lastClickTime: Date = .distantPast
 
     private func logEvent(_ msg: String) {
         let timestamp = Date().timeIntervalSince1970
@@ -126,10 +132,6 @@ class NotchViewModel: ObservableObject {
         screenSelector.$isPickerExpanded
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
-
-        soundSelector.$isPickerExpanded
-            .sink { [weak self] _ in self?.objectWillChange.send() }
-            .store(in: &cancellables)
     }
 
     // MARK: - Event Handling
@@ -146,7 +148,7 @@ class NotchViewModel: ObservableObject {
 
         events.mouseDown
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] event in
                 self?.lastEvent = "mouseDown"
                 self?.logEvent("mouseDown")
                 self?.handleMouseDown()
@@ -193,47 +195,45 @@ class NotchViewModel: ObservableObject {
     }
 
     private func handleMouseDown() {
-        let location = NSEvent.mouseLocation
+        let screenLocation = NSEvent.mouseLocation
 
-        logEvent("handleMouseDown: status=\(status), loc=\(location), isInChatMode=\(isInChatMode)")
-        if status == .opened {
-            let outsidePanel = geometry.isPointOutsidePanel(location, size: openedSize)
-            let inNotch = geometry.notchScreenRect.contains(location)
-            logEvent("  opened case: outsidePanel=\(outsidePanel), inNotch=\(inNotch)")
-        }
+        // Convert screen coordinates to window coordinates
+        // Screen coords: origin at top-left, y increases downward
+        // Window coords: origin at bottom-left of window, y increases upward
+        // Window origin in screen coords: (screenRect.origin.x, screenRect.maxY - windowHeight)
+        let windowX = screenLocation.x - geometry.screenRect.origin.x
+        let windowY = screenLocation.y - (geometry.screenRect.maxY - geometry.windowHeight)
+        let windowLocation = CGPoint(x: windowX, y: windowY)
+
+        // Calculate panel rect in window coordinates (matching hitTestRect)
+        let panelSize = openedSize
+        let panelWidth = panelSize.width + 52
+        let panelHeight = panelSize.height
+        let panelRectWindow = CGRect(
+            x: (geometry.screenRect.width - panelWidth) / 2,
+            y: geometry.windowHeight - panelHeight,
+            width: panelWidth,
+            height: panelHeight
+        )
+
+        let isOutside = !panelRectWindow.contains(windowLocation)
+        let inNotch = geometry.notchScreenRect.contains(screenLocation)
 
         switch status {
         case .opened:
-            if geometry.isPointOutsidePanel(location, size: openedSize) {
-                // Check Keep Visible - if enabled, minimize to icon instead of closing
-                let keepVisible = UserDefaults.standard.bool(forKey: "keepNotchVisible")
-                if keepVisible {
-                    logEvent("  -> Keep Visible enabled, minimizing to icon")
-                    notchMinimize()
-                } else {
-                    logEvent("  -> calling notchClose (outside panel)")
-                    notchClose()
-                }
+            if isOutside {
+                notchClose()
                 // Re-post the click so it reaches the window/app behind us
-                repostClickAt(location)
-            } else if geometry.notchScreenRect.contains(location) {
+                repostClickAt(screenLocation)
+            } else if inNotch {
                 // Clicking notch while opened - only close if NOT in chat mode
                 if !isInChatMode {
-                    logEvent("  -> calling notchClose (in notch, not chat mode)")
                     notchClose()
-                    // Don't allow immediate re-open to prevent click bounce
-                    lastClickTime = Date()
                 }
             }
         case .closed, .popping:
-            // Prevent click bounce: ignore clicks within 0.3s of last close
-            if Date().timeIntervalSince(lastClickTime) < 0.3 {
-                logEvent("  -> ignoring rapid click")
-                return
-            }
-            if geometry.isPointInNotch(location) {
+            if geometry.isPointInNotch(screenLocation) {
                 notchOpen(reason: .click)
-                lastClickTime = Date()
             }
         }
     }

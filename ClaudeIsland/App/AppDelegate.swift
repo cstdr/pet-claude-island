@@ -10,6 +10,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var updateCheckTimer: Timer?
 
     static var shared: AppDelegate?
+    static var isMixpanelInitialized: Bool = false
     let updater: SPUUpdater
     private let userDriver: NotchUserDriver
 
@@ -42,6 +43,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         Mixpanel.initialize(token: "49814c1436104ed108f3fc4735228496")
+        AppDelegate.isMixpanelInitialized = true
 
         let distinctId = getOrCreateDistinctId()
         Mixpanel.mainInstance().identify(distinctId: distinctId)

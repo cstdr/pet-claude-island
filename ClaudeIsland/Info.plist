@@ -14,6 +14,8 @@
     <string>$(MARKETING_VERSION)</string>
     <key>LSUIElement</key>
     <true/>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Claude Island needs microphone access to record custom notification sounds.</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright 2025. All rights reserved.</string>
 
