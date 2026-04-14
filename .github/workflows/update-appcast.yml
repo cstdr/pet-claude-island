@@ -23,54 +23,29 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           set -e
-
-          # Get latest release info
           RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest")
-
           TAG_NAME=$(echo "$RESPONSE" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
           VERSION=$(echo "$TAG_NAME" | sed 's/v//')
-
-          # Find the zip asset
           ASSET_URL=$(echo "$RESPONSE" | grep -o '"browser_download_url": "[^"]*\.zip"' \
             | head -1 | sed 's/"browser_download_url": "//;s/"//')
-
-          # Get asset size
           ASSET_SIZE=$(curl -s -I -H "Authorization: token $GITHUB_TOKEN" "$ASSET_URL" \
             | grep -i content-length | awk '{print $2}' | tr -d '\r')
-
-          echo "Tag: $TAG_NAME, Version: $VERSION"
-          echo "Asset: $ASSET_URL ($ASSET_SIZE bytes)"
-
-          # Write appcast.xml
-          cat > appcast.xml << 'XMLEOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
-  <channel>
-    <title>Cat-Claude-Island Updates</title>
-    <link>https://cstdr.github.io/cat-claude-island/appcast.xml</link>
-    <description>Most recent updates</description>
-    <language>en</language>
-    <item>
-      <title>TAG</title>
-      <sparkle:version>VER</sparkle:version>
-      <sparkle:shortVersionString>TAG</sparkle:shortVersionString>
-      <sparkle:releaseNotesLink>https://REPO/releases/tag/TAG</sparkle:releaseNotesLink>
-      <enclosure url="URL"
-                 length="SIZE"
-                 type="application/octet-stream"/>
-    </item>
-  </channel>
-</rss>
-XMLEOF
-
-          # Replace placeholders
-          sed -i "s/TAG/$TAG_NAME/g" appcast.xml
-          sed -i "s/VER/$VERSION/g" appcast.xml
-          sed -i "s|URL|$ASSET_URL|g" appcast.xml
-          sed -i "s/SIZE/$ASSET_SIZE/g" appcast.xml
-          sed -i "s|REPO|$GITHUB_REPOSITORY|g" appcast.xml
-
+          echo "Tag: $TAG_NAME"
+          echo "Asset URL: $ASSET_URL"
+          echo "Asset Size: $ASSET_SIZE"
+          XML="<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+          XML="$XML<rss version=\"2.0\" xmlns:sparkle=\"http://www.andymatuschak.org/xml-namespaces/sparkle\">"
+          XML="$XML<channel><title>Cat-Claude-Island Updates</title>"
+          XML="$XML<link>https://cstdr.github.io/cat-claude-island/appcast.xml</link>"
+          XML="$XML<description>Most recent updates</description><language>en</language>"
+          XML="$XML<item><title>$TAG_NAME</title>"
+          XML="$XML<sparkle:version>$VERSION</sparkle:version>"
+          XML="$XML<sparkle:shortVersionString>$TAG_NAME</sparkle:shortVersionString>"
+          XML="$XML<sparkle:releaseNotesLink>https://$GITHUB_REPOSITORY/releases/tag/$TAG_NAME</sparkle:releaseNotesLink>"
+          XML="$XML<enclosure url=\"$ASSET_URL\" length=\"$ASSET_SIZE\" type=\"application/octet-stream\"/>"
+          XML="$XML</item></channel></rss>"
+          echo "$XML" > appcast.xml
           cat appcast.xml
 
       - name: Upload Pages artifact
