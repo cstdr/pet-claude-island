@@ -59,6 +59,8 @@
 
 /* Custom Sound */
 "Custom Sound" = "Custom Sound";
+"System Sounds" = "System Sounds";
+"Custom" = "Custom";
 "Preview" = "Preview";
 "Stop" = "Stop";
 
@@ -74,6 +76,12 @@
 "Claude Code needs your input" = "Claude Code needs your input";
 "Subagent used %d tools:" = "Subagent used %d tools:";
 "Waiting: %@" = "Waiting: %@";
+"Message Claude..." = "Message Claude...";
+"Open Claude Code in terminal to enable messaging" = "Open Claude Code in terminal to enable messaging";
+"Processing" = "Processing";
+"Working" = "Working";
+"Running agent..." = "Running agent...";
+"Image (%@)" = "Image (%@)";
 
 /* Tool Results */
 "Created" = "Created";

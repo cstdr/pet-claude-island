@@ -87,7 +87,7 @@ struct CustomSoundRow: View {
     private var soundSelector: some View {
         Menu {
             // System sounds section
-            Section("System Sounds") {
+            Section("System Sounds".localized) {
                 ForEach(NotificationSound.allCases, id: \.self) { sound in
                     Button {
                         selectedSystemSound = sound
@@ -111,7 +111,7 @@ struct CustomSoundRow: View {
 
             // Custom sound section
             if soundManager.hasCustomSound(for: type) {
-                Section("Custom") {
+                Section("Custom".localized) {
                     Button {
                         soundSource = .custom
                         saveSettings()
@@ -149,7 +149,7 @@ struct CustomSoundRow: View {
 
     private var selectedSoundLabel: String {
         if soundSource == .custom {
-            return "Custom"
+            return "Custom".localized
         }
         return selectedSystemSound.rawValue
     }

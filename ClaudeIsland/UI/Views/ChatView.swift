@@ -369,7 +369,7 @@ struct ChatView: View {
 
     private var inputBar: some View {
         HStack(spacing: 10) {
-            TextField(canSendMessages ? "Message Claude..." : "Open Claude Code in terminal to enable messaging", text: $inputText)
+            TextField(canSendMessages ? "Message Claude...".localized : "Open Claude Code in terminal to enable messaging".localized, text: $inputText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
                 .foregroundColor(canSendMessages ? .white : .white.opacity(0.4))
@@ -608,7 +608,7 @@ struct AssistantMessageView: View {
 // MARK: - Processing Indicator
 
 struct ProcessingIndicatorView: View {
-    private let baseTexts = ["Processing", "Working"]
+    private let baseTexts = ["Processing".localized, "Working".localized]
     private let color = Color(red: 0.85, green: 0.47, blue: 0.34) // Claude orange
     private let baseText: String
 
@@ -721,7 +721,7 @@ struct ToolCallView: View {
                     .fixedSize()
 
                 if tool.name == "Task" && !tool.subagentTools.isEmpty {
-                    let taskDesc = tool.input["description"] ?? "Running agent..."
+                    let taskDesc = tool.input["description"] ?? "Running agent...".localized
                     Text("\(taskDesc) (\(tool.subagentTools.count) tools)")
                         .font(.system(size: 11))
                         .foregroundColor(textColor.opacity(0.7))
@@ -972,7 +972,7 @@ struct ImageMessageView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "photo")
                         .font(.system(size: 12))
-                    Text("Image (\(image.mediaType))")
+                    Text(LanguageManager.shared.localized("Image (%@)", image.mediaType))
                         .font(.system(size: 12))
                 }
                 .foregroundColor(.white.opacity(0.5))
