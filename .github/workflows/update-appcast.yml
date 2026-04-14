@@ -46,13 +46,11 @@ jobs:
           echo "<sparkle:releaseNotesLink>https://$GITHUB_REPOSITORY/releases/tag/$TAG_NAME</sparkle:releaseNotesLink>" >> appcast.xml
           echo "<enclosure url=\"$ASSET_URL\" length=\"$ASSET_SIZE\" type=\"application/octet-stream\"/>" >> appcast.xml
           echo '</item></channel></rss>' >> appcast.xml
-          cat appcast.xml
-          ls -la appcast.xml
-
-      - name: Upload Pages artifact
-        run: |
           mkdir -p _site
           cp appcast.xml _site/
+          cat _site/appcast.xml
+
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
