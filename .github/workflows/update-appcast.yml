@@ -16,7 +16,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Generate appcast.xml
-        id: generate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -26,7 +25,7 @@ jobs:
             "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest")
 
           TAG_NAME=$(echo "$RESPONSE" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-          VERSION=$(echo $TAG_NAME | sed 's/v//')
+          VERSION=$(echo "$TAG_NAME" | sed 's/v//')
 
           # Find the zip asset
           ASSET_URL=$(echo "$RESPONSE" | grep -o '"browser_download_url": "[^"]*\.zip"' \
@@ -36,14 +35,11 @@ jobs:
           ASSET_SIZE=$(curl -s -I -H "Authorization: token $GITHUB_TOKEN" "$ASSET_URL" \
             | grep -i content-length | awk '{print $2}' | tr -d '\r')
 
-          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "ASSET_URL=$ASSET_URL" >> $GITHUB_OUTPUT
-          echo "ASSET_SIZE=$ASSET_SIZE" >> $GITHUB_OUTPUT
+          echo "Tag: $TAG_NAME, Version: $VERSION"
+          echo "Asset: $ASSET_URL ($ASSET_SIZE bytes)"
 
-      - name: Create appcast.xml
-        run: |
-          cat > appcast.xml << EOF
+          # Generate appcast.xml
+          cat > appcast.xml << 'APPCAST'
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
   <channel>
@@ -52,17 +48,24 @@ jobs:
     <description>Most recent updates</description>
     <language>en</language>
     <item>
-      <title>${{ steps.generate.outputs.TAG_NAME }}</title>
-      <sparkle:version>${{ steps.generate.outputs.VERSION }}</sparkle:version>
-      <sparkle:shortVersionString>${{ steps.generate.outputs.TAG_NAME }}</sparkle:shortVersionString>
-      <sparkle:releaseNotesLink>https://github.com/${{ github.repository }}/releases/tag/${{ steps.generate.outputs.TAG_NAME }}</sparkle:releaseNotesLink>
-      <enclosure url="${{ steps.generate.outputs.ASSET_URL }}"
-                 length="${{ steps.generate.outputs.ASSET_SIZE }}"
+      <title>TAG_PLACEHOLDER</title>
+      <sparkle:version>VERSION_PLACEHOLDER</sparkle:version>
+      <sparkle:shortVersionString>TAG_PLACEHOLDER</sparkle:shortVersionString>
+      <sparkle:releaseNotesLink>https://REPO_PLACEHOLDER/releases/tag/TAG_PLACEHOLDER</sparkle:releaseNotesLink>
+      <enclosure url="ASSET_PLACEHOLDER"
+                 length="SIZE_PLACEHOLDER"
                  type="application/octet-stream"/>
     </item>
   </channel>
 </rss>
-EOF
+APPCAST
+
+          # Replace placeholders using sed
+          sed -i "s/TAG_PLACEHOLDER/$TAG_NAME/g" appcast.xml
+          sed -i "s/VERSION_PLACEHOLDER/$VERSION/g" appcast.xml
+          sed -i "s|ASSET_PLACEHOLDER|$ASSET_URL|g" appcast.xml
+          sed -i "s/SIZE_PLACEHOLDER/$ASSET_SIZE/g" appcast.xml
+          sed -i "s|REPO_PLACEHOLDER|$GITHUB_REPOSITORY|g" appcast.xml
 
           cat appcast.xml
 
