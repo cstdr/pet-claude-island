@@ -21,9 +21,8 @@
 
     <!-- Sparkle Update Configuration -->
     <key>SUFeedURL</key>
-    <string>https://claudeisland.com/appcast.xml</string>
-    <key>SUPublicEDKey</key>
-    <string>w5NwH5KRfE7LfeZ09J8lWx3UQrWTqUbfH4HHBa1OPRk=</string>
+    <string>https://cstdr.github.io/cat-claude-island/appcast.xml</string>
+    <!-- SUPublicEDKey: Set your EdDSA public key here if using code signing -->
     <key>SUEnableAutomaticChecks</key>
     <true/>
 </dict>
