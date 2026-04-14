@@ -497,7 +497,7 @@ extension ChatView {
 
         // Try Ghostty first (native AppleScript control)
         if session.isInGhostty && !session.isInTmux {
-            let success = await GhosttyController.shared.sendText(text, to: pid)
+            _ = await GhosttyController.shared.sendText(text, to: pid)
             return
         }
 

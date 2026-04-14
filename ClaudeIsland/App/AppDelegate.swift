@@ -12,7 +12,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var updateCheckTimer: Timer?
 
     static var shared: AppDelegate?
-    static var isMixpanelInitialized: Bool = false
+    static nonisolated var isMixpanelInitialized: Bool = false
     let updater: SPUUpdater
     private let userDriver: NotchUserDriver
 

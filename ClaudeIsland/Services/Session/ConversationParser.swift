@@ -49,7 +49,7 @@ actor ConversationParser {
     nonisolated static let logger = Logger(subsystem: "com.claudeisland", category: "Parser")
 
     /// Shared ISO8601 date formatter (expensive to create, reused across all message parsing)
-    nonisolated private static let isoFormatter: ISO8601DateFormatter = {
+    nonisolated(unsafe) private static let isoFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return formatter
