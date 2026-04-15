@@ -99,8 +99,10 @@ class CustomSoundManager: NSObject, ObservableObject {
     }
 
     func startRecording(for type: NotificationType) {
+        print("DEBUG startRecording: BEGIN, type=\(type)")
         // Stop any existing recording
         if isRecording != nil {
+            print("DEBUG startRecording: stopping existing recording")
             stopRecording()
         }
 
@@ -108,6 +110,7 @@ class CustomSoundManager: NSObject, ObservableObject {
         audioPlayer?.stop()
 
         let url = soundsDirectory.appendingPathComponent(type.fileName)
+        print("DEBUG startRecording: url=\(url)")
 
         // Remove existing file if present
         try? FileManager.default.removeItem(at: url)
@@ -120,20 +123,26 @@ class CustomSoundManager: NSObject, ObservableObject {
         ]
 
         do {
+            print("DEBUG startRecording: creating AVAudioRecorder")
             audioRecorder = try AVAudioRecorder(url: url, settings: settings)
             audioRecorder?.isMeteringEnabled = true
             audioRecorder?.delegate = self
 
+            print("DEBUG startRecording: calling record()")
             if audioRecorder?.record() == true {
+                print("DEBUG startRecording: SUCCESS, recording started")
                 isRecording = type
                 recordingDuration = 0
                 audioLevels = []
                 recordingStartTime = Date()
                 startMeteringTimer()
+            } else {
+                print("DEBUG startRecording: record() returned false")
             }
         } catch {
-            print("Failed to start recording: \(error)")
+            print("DEBUG startRecording: FAILED - \(error)")
         }
+        print("DEBUG startRecording: END")
     }
 
     func stopRecording() {

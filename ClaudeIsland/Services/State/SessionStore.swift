@@ -128,10 +128,13 @@ actor SessionStore {
         let isNewSession = sessions[sessionId] == nil
         var session = sessions[sessionId] ?? createSession(from: event)
 
-        // Track new session in Mixpanel
-        if isNewSession && AppDelegate.isMixpanelInitialized {
-            Mixpanel.mainInstance().track(event: "Session Started")
-        }
+        // Track new session in Mixpanel - temporarily disabled due to initialization timing issue
+        // if isNewSession {
+        //     let initialized = AppDelegate.isMixpanelInitialized
+        //     if initialized {
+        //         Mixpanel.mainInstance().track(event: "Session Started")
+        //     }
+        // }
 
         session.pid = event.pid
         if let pid = event.pid {

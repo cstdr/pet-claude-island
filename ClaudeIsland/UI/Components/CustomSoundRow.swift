@@ -185,7 +185,15 @@ struct CustomSoundRow: View {
             }
         }
         .buttonStyle(.plain)
+        .contentShape(Circle())
+        .padding(8)
         .disabled(isOtherRecording)
+        .highPriorityGesture(
+            TapGesture()
+                .onEnded { _ in
+                    handleRecordTap()
+                }
+        )
         .onHover { isRecordingHovered = $0 }
     }
 
@@ -335,19 +343,18 @@ struct CustomSoundRow: View {
     }
 
     private func handleRecordTap() {
+        print("DEBUG handleRecordTap: START, type=\(type)")
         if isCurrentlyRecording {
+            print("DEBUG handleRecordTap: stopping recording")
             soundManager.stopRecording()
         } else if !isOtherRecording {
-            // Expand UI first for immediate feedback
+            print("DEBUG handleRecordTap: setting expandedType, starting recording")
             soundManager.expandedType = type
-            soundManager.requestRecordPermission { [self] granted in
-                if granted {
-                    soundManager.startRecording(for: type)
-                } else {
-                    soundManager.expandedType = nil
-                    openMicrophoneSettings()
-                }
-            }
+            print("DEBUG handleRecordTap: expandedType set, calling startRecording")
+            soundManager.startRecording(for: type)
+            print("DEBUG handleRecordTap: startRecording returned")
+        } else {
+            print("DEBUG handleRecordTap: other recording in progress, ignoring")
         }
     }
 
