@@ -338,11 +338,13 @@ struct CustomSoundRow: View {
         if isCurrentlyRecording {
             soundManager.stopRecording()
         } else if !isOtherRecording {
+            // Expand UI first for immediate feedback
+            soundManager.expandedType = type
             soundManager.requestRecordPermission { [self] granted in
                 if granted {
-                    soundManager.expandedType = type
                     soundManager.startRecording(for: type)
                 } else {
+                    soundManager.expandedType = nil
                     openMicrophoneSettings()
                 }
             }
