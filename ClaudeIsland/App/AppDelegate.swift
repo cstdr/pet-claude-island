@@ -44,10 +44,40 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        // Initialize Mixpanel first before any other calls
-        Mixpanel.initialize(token: "fbf0ea769e7d93e51bb9baab85dde74f", trackAutomaticEvents: false)
-        AppDelegate.isMixpanelInitialized = true
+        // Initialize Mixpanel asynchronously
+        Task {
+            do {
+                try await Mixpanel.initialize(token: "fbf0ea769e7d93e51bb9baab85dde74f", trackAutomaticEvents: false)
+                await MainActor.run {
+                    AppDelegate.isMixpanelInitialized = true
+                }
+                await setupMixpanel()
+            } catch {
+                print("Failed to initialize Mixpanel: \(error)")
+            }
+        }
 
+        HookInstaller.installIfNeeded()
+        NSApplication.shared.setActivationPolicy(.accessory)
+
+        windowManager = WindowManager()
+        _ = windowManager?.setupNotchWindow()
+
+        screenObserver = ScreenObserver { [weak self] in
+            self?.handleScreenChange()
+        }
+
+        if updater.canCheckForUpdates {
+            updater.checkForUpdates()
+        }
+
+        updateCheckTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
+            guard let updater = self?.updater, updater.canCheckForUpdates else { return }
+            updater.checkForUpdates()
+        }
+    }
+
+    private func setupMixpanel() async {
         let distinctId = getOrCreateDistinctId()
         Mixpanel.mainInstance().identify(distinctId: distinctId)
 
@@ -72,25 +102,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         Mixpanel.mainInstance().track(event: "App Launched")
         Mixpanel.mainInstance().flush()
-
-        HookInstaller.installIfNeeded()
-        NSApplication.shared.setActivationPolicy(.accessory)
-
-        windowManager = WindowManager()
-        _ = windowManager?.setupNotchWindow()
-
-        screenObserver = ScreenObserver { [weak self] in
-            self?.handleScreenChange()
-        }
-
-        if updater.canCheckForUpdates {
-            updater.checkForUpdates()
-        }
-
-        updateCheckTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
-            guard let updater = self?.updater, updater.canCheckForUpdates else { return }
-            updater.checkForUpdates()
-        }
     }
 
     private func handleScreenChange() {
